@@ -1,0 +1,28 @@
+# Java y Maven
+target/
+*.class
+*.jar
+*.war
+*.log
+
+# IntelliJ
+.idea/
+*.iml
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# Archivos temporales
+*.tmp
+*.bak
+
+# Variables y credenciales
+.env
+.env.*
+!.env.example
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
