@@ -31,3 +31,7 @@ Preparación del repositorio y entorno de desarrollo.
 ## Metodología
 
 Enfoque híbrido SDLC y Scrum.
+
+## Desarrollo
+
+El backend se desarrollará con Spring Boot.
