@@ -1,79 +1,71 @@
-# Backend · Módulo de Asignación de Horarios Docente-Curso
+# Backend — Asignación de horarios docente-curso
 
-## Alcance de esta entrega: Sprint 0A
+Universidad El Bosque · Proyecto Núcleo 1 · Java 25 · Spring Boot 4.1.1 · Maven.
 
-Esta es una **base ejecutable** de aplicación web monolítica Spring Boot con Spring MVC y Thymeleaf. Se ha creado una vista técnica en `/` para comprobar que la aplicación arranca. **No** implementa aún RF01–RF10 ni las entidades JPA.
+**Entrega de código inicial ampliado (backend):** 7 entidades JPA, 7 repositorios, servicios de registro, parametrización, reglas independientes, generación heurística, movimientos, publicación, consultas, exportación CSV y controladores REST. No incluye interfaz final de arrastrar y soltar ni autenticación institucional.
 
-Esta decisión es temporal: el Sprint 0 completo exige persistencia del modelo en MySQL. Se incorporará en 0B cuando se apruebe el esquema `01_schema.sql` desarrollado en paralelo con Claude.
+## Cómo incorporarlo al repositorio
 
-### Versiones
+1. En la rama `feature/backend-base`, guarda una copia de seguridad si modificaste `backend/`.
+2. Extrae este ZIP en la **raíz** de `asignacion-horarios-ueb/` (contiene `backend/`). Combina las carpetas; no crees `backend/backend`.
+3. Revisa los archivos modificados en Source Control antes de cualquier commit.
 
-- Java: JDK **25** (elección del informe técnico, §6.4).
-- Spring Boot: **4.1.1** (parche estable de la línea 4.1 prevista en el informe).
-- Maven: **3.6.3 o superior** (instalado y disponible como `mvn`).
-- MySQL previsto: **9.7 LTS**, pendiente de integración.
-
-### Requisitos previos
+## Arranque sin MySQL (solo desarrollo)
 
 ```powershell
-java -version
-javac -version
-mvn -version
-```
-
-Java y `javac` deben indicar 25. Si `mvn` no se reconoce, instala Maven o genera y agrega un Maven Wrapper oficial antes de continuar. Este paquete no incluye `mvnw.cmd`.
-
-### Compilar y probar
-
-Desde la carpeta `backend/`:
-
-```powershell
+cd backend
 mvn clean test
 mvn spring-boot:run
 ```
 
-En el navegador, visita `http://localhost:8080/`.
+El perfil por defecto es `demo`: utiliza **H2 en memoria** para permitir desarrollar y probar la lógica mientras Claude corrige la BD. Las tablas se recrean cada vez; **nunca** uses este perfil para entregar datos ni sustituyas MySQL por H2 en la evaluación final. Página: http://localhost:8080 y endpoints en `/api/v1`.
 
-Para generar el jar:
+## Integración futura de MySQL
+
+Primero aplicar el SQL definitivo que entregue Claude en una BD de desarrollo. Revisar diferencias con `CONTRATO_INTEGRACION.md`. En PowerShell:
 
 ```powershell
-mvn clean package
-java -jar target/asignacion-horarios-0.0.1-SNAPSHOT.jar
+$env:SPRING_PROFILES_ACTIVE="mysql"
+$env:DB_URL="jdbc:mysql://localhost:3306/horarios_ueb"
+$env:DB_USER="horarios_app"
+$env:DB_PASSWORD="..."  # No guardar ni publicar contraseñas reales
+mvn spring-boot:run
 ```
 
-Los comandos requieren conexión a Maven Central en su primer uso si aún no se tienen descargadas las dependencias.
+En el perfil `mysql`, `spring.jpa.hibernate.ddl-auto=validate`: Hibernate **no crea ni modifica** las tablas. Si el SQL final cambia, habrá que ajustar los mapeos JPA; no habilitar `update` o `create` en la base institucional.
 
-### Organización
+## API inicial (contrato JSON)
 
-- `controller/`: controladores Spring MVC (solo `InicioController` técnico en esta etapa).
-- `service/`: casos de uso y servicios; reservado para sprints siguientes.
-- `model/`: las siete entidades aprobadas; pendiente de 0B.
-- `repository/`: persistencia JPA; pendiente de 0B.
-- `validation/`: reglas independientes, duras y preferencias; pendiente de Sprint 1.
-- `resources/templates/`: plantillas Thymeleaf.
-- `resources/static/`: archivos CSS/JS/recursos web.
+| Método | Ruta | Uso |
+|---|---|---|
+| POST | `/api/v1/periodos` | Registrar periodo con parámetros iniciales |
+| GET | `/api/v1/periodos` | Periodos existentes |
+| GET | `/api/v1/periodos/{id}` | Consultar periodo |
+| PUT | `/api/v1/periodos/{id}/parametros` | Ajustar parámetros |
+| POST | `/api/v1/docentes` | Registrar docente y restricciones |
+| GET | `/api/v1/docentes` | Consultar docentes |
+| GET | `/api/v1/docentes/{id}/restricciones` | Consultar restricciones |
+| POST | `/api/v1/cursos` | Registrar curso |
+| GET | `/api/v1/cursos` | Consultar cursos |
+| POST | `/api/v1/grupos` | Registrar grupo por periodo |
+| GET | `/api/v1/periodos/{id}/grupos` | Consultar grupos |
+| POST | `/api/v1/periodos/{id}/generar` | Crear propuesta en borrador; informa faltantes |
+| GET | `/api/v1/periodos/{id}/horarios` | Consultar histórico |
+| GET | `/api/v1/horarios/{id}` | Consultar detalle |
+| POST | `/api/v1/horarios/{id}/validar` | Previsualizar movimiento |
+| PUT | `/api/v1/horarios/{id}/sesiones/{sesionId}` | Mover sesión si es válido |
+| POST | `/api/v1/horarios/{id}/publicar` | Validar todo y publicar |
+| GET | `/api/v1/horarios/{id}/sesiones` | Consultar por `docenteId`/`cursoId`; publicados por defecto |
+| GET | `/api/v1/horarios/{id}/exportar.csv` | Descargar CSV publicado |
 
-### Criterios de comprobación (Sprint 0A)
+Ver `EJEMPLOS_API.http` para ejecutar una secuencia con VS Code REST Client (o adaptar los JSON a Postman). El perfil H2 no trae seed automático: crea periodo, docente, curso y grupo antes de generar.
 
-- [ ] `mvn clean test` termina con `BUILD SUCCESS`.
-- [ ] `mvn spring-boot:run` inicia el servidor sin error.
-- [ ] La página `http://localhost:8080/` se visualiza.
-- [ ] `git status` muestra solo cambios previstos; commit en `feature/backend-base`.
-- [ ] Pull request revisado por un integrante según Definition of Done del documento Scrum.
+## Alcance pendiente
 
-### Integración pendiente (Sprint 0B)
+* Ajustar mappings al **SQL final** que entregue Claude; prueba de integración real contra MySQL pendiente.
+* Validación del Comité sobre sentido de restricciones, grupo por periodo y política de horarios publicados.
+* Pruebas de integración/concurrencia con MySQL, rendimiento con datos 2026-2 y seguridad de acceso.
+* Interfaces Thymeleaf definitivas, SortableJS, filtros sin recarga y botón para deshacer el último movimiento.
+* Motor heurístico **no garantiza optimalidad**; produce una propuesta reproducible e informa sesiones no ubicadas.
 
-1. Revisar `database/01_schema.sql`, el diagrama ER y el diccionario de datos de Claude.
-2. Confirmar columnas, claves, tipos, relaciones y suposiciones con los documentos del proyecto.
-3. Incorporar Spring Data JPA y MySQL Connector/J en `pom.xml`.
-4. Mapear las siete entidades respetando el SQL aprobado.
-5. Configurar URL/usuario/contraseña mediante variables de entorno, nunca en Git.
-6. Adoptar `spring.jpa.hibernate.ddl-auto=validate` para **validar** el esquema, no crearlo automáticamente.
-7. Ejecutar las pruebas de integración con MySQL y registrar evidencia.
-
-### Advertencias
-
-- Este módulo todavía **no** genera ni valida horarios.
-- No crear tablas a partir de Hibernate sin aceptar antes el esquema de Claude.
-- No subir contraseñas, `.env` ni datos personales reales.
-- No sustituir la arquitectura MVC monolítica por una API React/SPA.
+Los endpoints no incluyen autenticación ni control de permisos: mantener servidor y base de desarrollo **solo en localhost**, sin exponerlos públicamente.

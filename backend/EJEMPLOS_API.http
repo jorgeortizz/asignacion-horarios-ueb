@@ -1,0 +1,40 @@
+@base = http://localhost:8080/api/v1
+
+### 1 - Crear periodo académico 2026-2
+POST {{base}}/periodos
+Content-Type: application/json
+
+{"nombre":"2026-2","fechaInicio":"2026-07-01","fechaFin":"2026-12-15"}
+
+### 2 - Registrar docente sin restricciones
+POST {{base}}/docentes
+Content-Type: application/json
+
+{"nombre":"Docente de prueba","tipoVinculacion":"TC","especialidades":["Programación"],"sinRestricciones":true,"restricciones":[]}
+
+### 3 - Registrar curso
+POST {{base}}/cursos
+Content-Type: application/json
+
+{"codigo":"INF101","nombre":"Programación I","sesionesSemanales":2,"duracionSesionMin":120,"necesitaAulaEspecial":true}
+
+### 4 - Registrar grupo (ajusta los IDs si es necesario)
+POST {{base}}/grupos
+Content-Type: application/json
+
+{"periodoId":1,"cursoId":1,"docenteId":1,"codigo":"01","inscritos":20}
+
+### 5 - Generar borrador
+POST {{base}}/periodos/1/generar
+
+### 6 - Ver propuesta
+GET {{base}}/horarios/1
+
+### 7 - Consultar antes de publicar (vista del Comité, soloPublicados=false)
+GET {{base}}/horarios/1/sesiones?soloPublicados=false
+
+### 8 - Publicar si todas las sesiones están asignadas
+POST {{base}}/horarios/1/publicar
+
+### 9 - Exportar horario publicado
+GET {{base}}/horarios/1/exportar.csv
