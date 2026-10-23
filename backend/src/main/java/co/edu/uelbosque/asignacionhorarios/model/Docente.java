@@ -1,6 +1,8 @@
 package co.edu.uelbosque.asignacionhorarios.model;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.time.*;
 import java.math.BigDecimal;
 import java.util.*;
@@ -17,11 +19,12 @@ public class Docente {
     private String nombre;
 
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
         @Column(name="tipo_vinculacion", nullable=false, length=15)
     private TipoVinculacion tipoVinculacion;
 
     @ElementCollection(fetch=FetchType.EAGER)
-        @CollectionTable(name="docente_especialidad", joinColumns=@JoinColumn(name="docente_id"))
+        @CollectionTable(name="docente_especialidad", joinColumns=@JoinColumn(name="docente_id", nullable=false, foreignKey=@ForeignKey(name="fk_docente_especialidad_docente")))
         @Column(name="especialidad", nullable=false, length=100)
     private Set<String> especialidades = new LinkedHashSet<>();
 

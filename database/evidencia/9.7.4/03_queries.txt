@@ -1,0 +1,180 @@
++----+-----------------------------+------------------+--------------------------------------------+
+| id | nombre                      | tipo_vinculacion | especialidades                             |
++----+-----------------------------+------------------+--------------------------------------------+
+|  1 | Ana María Rojas Prieto      | TC               | Bases de datos, Ingeniería de software     |
+|  2 | Carlos Eduardo Méndez Lara  | TRES_CUARTOS     | Redes de computadores, Sistemas operativos |
+|  3 | Diana Patricia Suárez Gil   | MEDIO_TIEMPO     | Matemáticas discretas                      |
+|  4 | Jorge Iván Castaño Ruiz     | CUARTO_TIEMPO    | Inteligencia artificial                    |
+|  5 | Luisa Fernanda Ortiz Vega   | TC               | Estructuras de datos, Programación         |
+|  6 | Mateo Herrera Pineda        | MEDIO_TIEMPO     | Arquitectura de computadores               |
++----+-----------------------------+------------------+--------------------------------------------+
++----+------------+-------------+----------+-------+------------+
+| id | dia        | hora_inicio | hora_fin | tipo  | sentido    |
++----+------------+-------------+----------+-------+------------+
+|  1 | Lunes      | 18:00:00    | 22:00:00 | FIRME | DISPONIBLE |
+|  2 | Martes     | 18:00:00    | 22:00:00 | FIRME | DISPONIBLE |
+|  3 | Miércoles  | 18:00:00    | 22:00:00 | FIRME | DISPONIBLE |
+|  4 | Jueves     | 18:00:00    | 22:00:00 | FIRME | DISPONIBLE |
+|  5 | Viernes    | 18:00:00    | 22:00:00 | FIRME | DISPONIBLE |
++----+------------+-------------+----------+-------+------------+
++----------+-------+---------------------------+-------------+------------------+-------------+-----------+------------------+---------------+
+| grupo_id | grupo | docente                   | cupo_maximo | limite_operativo | cupo_minimo | inscritos | candidato_cierre | excede_limite |
++----------+-------+---------------------------+-------------+------------------+-------------+-----------+------------------+---------------+
+|       11 | 01    | Luisa Fernanda Ortiz Vega |          40 |               44 |          10 |        38 |                0 |             0 |
+|       12 | 02    | Ana María Rojas Prieto    |          40 |               44 |          10 |        43 |                0 |             0 |
++----------+-------+---------------------------+-------------+------------------+-------------+-----------+------------------+---------------+
++----------+---------+---------------------------+-------+--------------------+-----------+
+| grupo_id | codigo  | curso                     | grupo | sesiones_semanales | inscritos |
++----------+---------+---------------------------+-------+--------------------+-----------+
+|       14 | FIC-301 | Bases de datos I          | 01    |                  2 |        25 |
+|       21 | FIC-350 | Ingeniería de software I  | 01    |                  2 |        12 |
+|       12 | FIC-101 | Programación I            | 02    |                  3 |        43 |
++----------+---------+---------------------------+-------+--------------------+-----------+
++------------+----------------+------------+-------------+----------+------------------------------+-------+-----------------------------+
+| horario_id | estado_horario | dia_nombre | hora_inicio | hora_fin | curso                        | grupo | docente                     |
++------------+----------------+------------+-------------+----------+------------------------------+-------+-----------------------------+
+|          2 | BORRADOR       | Lunes      | 07:00:00    | 09:00:00 | Programación I               | 01    | Luisa Fernanda Ortiz Vega   |
+|          2 | BORRADOR       | Lunes      | 09:00:00    | 11:00:00 | Estructuras de datos         | 01    | Luisa Fernanda Ortiz Vega   |
+|          2 | BORRADOR       | Lunes      | 13:00:00    | 15:00:00 | Programación I               | 02    | Ana María Rojas Prieto      |
+|          2 | BORRADOR       | Lunes      | 15:00:00    | 17:00:00 | Matemáticas discretas        | 02    | Diana Patricia Suárez Gil   |
+|          2 | BORRADOR       | Lunes      | 17:00:00    | 19:00:00 | Sistemas operativos          | 01    | Carlos Eduardo Méndez Lara  |
+|          2 | BORRADOR       | Martes     | 07:00:00    | 09:00:00 | Arquitectura de computadores | 01    | Mateo Herrera Pineda        |
+|          2 | BORRADOR       | Martes     | 07:00:00    | 09:00:00 | Matemáticas discretas        | 01    | Diana Patricia Suárez Gil   |
+|          2 | BORRADOR       | Martes     | 09:00:00    | 11:00:00 | Bases de datos I             | 01    | Ana María Rojas Prieto      |
+|          2 | BORRADOR       | Martes     | 13:00:00    | 15:00:00 | Redes de computadores        | 01    | Carlos Eduardo Méndez Lara  |
+|          2 | BORRADOR       | Martes     | 15:00:00    | 17:00:00 | Ingeniería de software I     | 01    | Ana María Rojas Prieto      |
+|          2 | BORRADOR       | Miércoles  | 07:00:00    | 09:00:00 | Programación I               | 01    | Luisa Fernanda Ortiz Vega   |
+|          2 | BORRADOR       | Miércoles  | 13:00:00    | 15:00:00 | Programación I               | 02    | Ana María Rojas Prieto      |
+|          2 | BORRADOR       | Miércoles  | 15:00:00    | 17:00:00 | Matemáticas discretas        | 02    | Diana Patricia Suárez Gil   |
+|          2 | BORRADOR       | Miércoles  | 17:00:00    | 19:00:00 | Sistemas operativos          | 01    | Carlos Eduardo Méndez Lara  |
+|          2 | BORRADOR       | Miércoles  | 19:00:00    | 21:00:00 | Inteligencia artificial      | 01    | Jorge Iván Castaño Ruiz     |
+|          2 | BORRADOR       | Jueves     | 07:00:00    | 09:00:00 | Matemáticas discretas        | 01    | Diana Patricia Suárez Gil   |
+|          2 | BORRADOR       | Jueves     | 09:00:00    | 11:00:00 | Arquitectura de computadores | 01    | Mateo Herrera Pineda        |
+|          2 | BORRADOR       | Jueves     | 09:00:00    | 11:00:00 | Estructuras de datos         | 01    | Luisa Fernanda Ortiz Vega   |
+|          2 | BORRADOR       | Jueves     | 13:00:00    | 15:00:00 | Bases de datos I             | 01    | Ana María Rojas Prieto      |
+|          2 | BORRADOR       | Jueves     | 15:00:00    | 17:00:00 | Redes de computadores        | 01    | Carlos Eduardo Méndez Lara  |
+|          2 | BORRADOR       | Viernes    | 07:00:00    | 09:00:00 | Programación I               | 01    | Luisa Fernanda Ortiz Vega   |
+|          2 | BORRADOR       | Viernes    | 13:00:00    | 15:00:00 | Programación I               | 02    | Ana María Rojas Prieto      |
+|          2 | BORRADOR       | Viernes    | 17:00:00    | 19:00:00 | Sistemas operativos          | 01    | Carlos Eduardo Méndez Lara  |
+|          2 | BORRADOR       | Sábado     | 09:00:00    | 11:00:00 | Sistemas operativos          | 01    | Carlos Eduardo Méndez Lara  |
++------------+----------------+------------+-------------+----------+------------------------------+-------+-----------------------------+
++------------+-------------+----------+--------------+---------------------------+-------+
+| dia_nombre | hora_inicio | hora_fin | curso_codigo | curso                     | grupo |
++------------+-------------+----------+--------------+---------------------------+-------+
+| Lunes      | 13:00:00    | 15:00:00 | FIC-101      | Programación I            | 02    |
+| Martes     | 09:00:00    | 11:00:00 | FIC-301      | Bases de datos I          | 01    |
+| Martes     | 15:00:00    | 17:00:00 | FIC-350      | Ingeniería de software I  | 01    |
+| Miércoles  | 13:00:00    | 15:00:00 | FIC-101      | Programación I            | 02    |
+| Jueves     | 13:00:00    | 15:00:00 | FIC-301      | Bases de datos I          | 01    |
+| Viernes    | 13:00:00    | 15:00:00 | FIC-101      | Programación I            | 02    |
++------------+-------------+----------+--------------+---------------------------+-------+
++-------+---------------------------+------------+-------------+----------+---------------------------------------+
+| grupo | docente                   | dia_nombre | hora_inicio | hora_fin | nota_aula                             |
++-------+---------------------------+------------+-------------+----------+---------------------------------------+
+| 01    | Luisa Fernanda Ortiz Vega | Lunes      | 07:00:00    | 09:00:00 | Necesita aula especial, por confirmar |
+| 01    | Luisa Fernanda Ortiz Vega | Miércoles  | 07:00:00    | 09:00:00 | Necesita aula especial, por confirmar |
+| 01    | Luisa Fernanda Ortiz Vega | Viernes    | 07:00:00    | 09:00:00 | Necesita aula especial, por confirmar |
+| 02    | Ana María Rojas Prieto    | Lunes      | 13:00:00    | 15:00:00 | Necesita aula especial, por confirmar |
+| 02    | Ana María Rojas Prieto    | Miércoles  | 13:00:00    | 15:00:00 | Necesita aula especial, por confirmar |
+| 02    | Ana María Rojas Prieto    | Viernes    | 13:00:00    | 15:00:00 | Necesita aula especial, por confirmar |
++-------+---------------------------+------------+-------------+----------+---------------------------------------+
++------------+---------+---------------------+----------+
+| horario_id | periodo | fecha_publicacion   | sesiones |
++------------+---------+---------------------+----------+
+|          1 | 2026-1  | 2026-01-20 17:00:00 |        8 |
++------------+---------+---------------------+----------+
++---------+--------------+------------+------------+-----------+---------------------+----------+
+| periodo | fecha_inicio | fecha_fin  | horario_id | estado    | fecha_publicacion   | sesiones |
++---------+--------------+------------+------------+-----------+---------------------+----------+
+| 2026-1  | 2026-01-26   | 2026-06-06 |          1 | PUBLICADO | 2026-01-20 17:00:00 |        8 |
++---------+--------------+------------+------------+-----------+---------------------+----------+
++----------+------------------------+-------+----------------------------+-----------+-------------+
+| grupo_id | curso                  | grupo | docente                    | inscritos | cupo_minimo |
++----------+------------------------+-------+----------------------------+-----------+-------------+
+|       15 | Matemáticas discretas  | 01    | Diana Patricia Suárez Gil  |         9 |          10 |
++----------+------------------------+-------+----------------------------+-----------+-------------+
++---------+-----------------------+-------------------+
+| codigo  | curso                 | grupos_en_periodo |
++---------+-----------------------+-------------------+
+| FIC-301 | Bases de datos I      |                 1 |
+| FIC-201 | Estructuras de datos  |                 1 |
+| FIC-101 | Programación I        |                 2 |
+| FIC-401 | Redes de computadores |                 1 |
++---------+-----------------------+-------------------+
++----+-------+------------+-------------+----------+------------------+-----------+
+| id | tipo  | sentido    | hora_inicio | hora_fin | contiene_casilla | se_solapa |
++----+-------+------------+-------------+----------+------------------+-----------+
+|  1 | FIRME | DISPONIBLE | 18:00:00    | 22:00:00 |                0 |         0 |
++----+-------+------------+-------------+----------+------------------+-----------+
++------------+------+-------------+----------+
+| periodo_id | dia  | hora_inicio | hora_fin |
++------------+------+-------------+----------+
+|          2 |    1 | 15:00:00    | 17:00:00 |
++------------+------+-------------+----------+
++-----+-------------+
+| dia | consecutivo |
++-----+-------------+
+|   3 |           0 |
++-----+-------------+
++----------+---------------------------+-------+------------+-------------+
+| grupo_id | curso                     | grupo | requeridas | programadas |
++----------+---------------------------+-------+------------+-------------+
+|       21 | Ingeniería de software I  | 01    |          2 |           1 |
++----------+---------------------------+-------+------------+-------------+
++----------+---------------------+-------+-------+-------+
+| grupo_id | curso               | grupo | dia_1 | dia_2 |
++----------+---------------------+-------+-------+-------+
+|       19 | Sistemas operativos | 01    |     5 |     6 |
++----------+---------------------+-------+-------+-------+
++------+-------------+----------+
+| dia  | hora_inicio | hora_fin |
++------+-------------+----------+
+|    1 | 07:00:00    | 09:00:00 |
+|    1 | 09:00:00    | 11:00:00 |
+|    1 | 13:00:00    | 15:00:00 |
+|    1 | 15:00:00    | 17:00:00 |
+|    1 | 17:00:00    | 19:00:00 |
+|    1 | 19:00:00    | 21:00:00 |
+|    2 | 07:00:00    | 09:00:00 |
+|    2 | 09:00:00    | 11:00:00 |
+|    2 | 13:00:00    | 15:00:00 |
+|    2 | 15:00:00    | 17:00:00 |
+|    2 | 17:00:00    | 19:00:00 |
+|    2 | 19:00:00    | 21:00:00 |
+|    3 | 07:00:00    | 09:00:00 |
+|    3 | 09:00:00    | 11:00:00 |
+|    3 | 13:00:00    | 15:00:00 |
+|    3 | 15:00:00    | 17:00:00 |
+|    3 | 17:00:00    | 19:00:00 |
+|    4 | 07:00:00    | 09:00:00 |
+|    4 | 09:00:00    | 11:00:00 |
+|    4 | 13:00:00    | 15:00:00 |
+|    4 | 15:00:00    | 17:00:00 |
+|    4 | 17:00:00    | 19:00:00 |
+|    4 | 19:00:00    | 21:00:00 |
+|    5 | 07:00:00    | 09:00:00 |
+|    5 | 09:00:00    | 11:00:00 |
+|    5 | 13:00:00    | 15:00:00 |
+|    5 | 15:00:00    | 17:00:00 |
+|    5 | 17:00:00    | 19:00:00 |
+|    5 | 19:00:00    | 21:00:00 |
+|    6 | 07:00:00    | 09:00:00 |
+|    6 | 09:00:00    | 11:00:00 |
++------+-------------+----------+
++---------+------------+---------------------+
+| periodo | horario_id | fecha_publicacion   |
++---------+------------+---------------------+
+| 2026-1  |          1 | 2026-01-20 17:00:00 |
++---------+------------+---------------------+
++------------+-------------+----------+-----------------+-------+
+| dia_nombre | hora_inicio | hora_fin | curso           | grupo |
++------------+-------------+----------+-----------------+-------+
+| Lunes      | 07:00:00    | 09:00:00 | Programación I  | 01    |
+| Miércoles  | 07:00:00    | 09:00:00 | Programación I  | 01    |
+| Viernes    | 07:00:00    | 09:00:00 | Programación I  | 01    |
++------------+-------------+----------+-----------------+-------+
++----------------+--------------------+
+| estado_horario | sesiones_afectadas |
++----------------+--------------------+
+| BORRADOR       |                  5 |
++----------------+--------------------+

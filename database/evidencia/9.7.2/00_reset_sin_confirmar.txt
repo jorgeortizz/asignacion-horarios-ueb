@@ -1,0 +1,3 @@
+aviso	confirmacion_recibida
+Reinicio de DESARROLLO de horarios_ueb: se requiere @confirmar_reinicio_dev	(no definida)
+ERROR 1242 (21000) at line 28: Subquery returns more than 1 row

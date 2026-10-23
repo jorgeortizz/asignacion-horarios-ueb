@@ -6,7 +6,8 @@ import java.math.BigDecimal;
 import java.util.*;
 
 @Entity
-@Table(name="grupo")
+@Table(name="grupo", uniqueConstraints=@UniqueConstraint(
+    name="uk_grupo_periodo_curso_codigo", columnNames={"periodo_id", "curso_id", "codigo"}))
 public class Grupo {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -14,15 +15,15 @@ public class Grupo {
     private Long id;
 
     @ManyToOne(fetch=FetchType.LAZY, optional=false)
-        @JoinColumn(name="periodo_id", nullable=false)
+        @JoinColumn(name="periodo_id", nullable=false, foreignKey=@ForeignKey(name="fk_grupo_periodo_academico"))
     private PeriodoAcademico periodo;
 
     @ManyToOne(fetch=FetchType.LAZY, optional=false)
-        @JoinColumn(name="curso_id", nullable=false)
+        @JoinColumn(name="curso_id", nullable=false, foreignKey=@ForeignKey(name="fk_grupo_curso"))
     private Curso curso;
 
     @ManyToOne(fetch=FetchType.LAZY, optional=false)
-        @JoinColumn(name="docente_id", nullable=false)
+        @JoinColumn(name="docente_id", nullable=false, foreignKey=@ForeignKey(name="fk_grupo_docente"))
     private Docente docente;
 
     @Column(name="codigo", nullable=false, length=10)

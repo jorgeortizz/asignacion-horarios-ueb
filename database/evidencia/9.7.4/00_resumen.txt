@@ -1,0 +1,39 @@
+MySQL 9.7.4 · 2026-10-21T20:45:15Z
+1. Flujo de desarrollo: 00 -> 01 -> 02 -> 03 -> 04 (x2)
+  04_tests (1.ª): 165 pruebas, 0 fallidas
+  04_tests (2.ª, repetible): 165 pruebas, 0 fallidas
+2. 01_schema.sql no destruye datos: segunda ejecución sobre la base cargada
+  OK: se detuvo con ERROR 1050
+  OK: las 32 sesiones siguen intactas
+3. Guardia de 00_reset_dev.sql sin confirmación
+  OK: se detuvo (ERROR 1242)
+  OK: la base no se borró
+4. Migraciones pendientes (en bases de desarrollo separadas)
+  05_tests_pendientes (P1+P3): 22 pruebas, 0 fallidas
+  06_tests_pendiente_P2 (P2): 10 pruebas, 0 fallidas
+5. Las pruebas nuevas detectan los problemas del esquema anterior (V1 sin V2)
+  Pruebas que fallan sobre V1 (esperado: > 0): 34 -> H01 H02 H03 H04 H05 H06 H07 H09 H10 H12 H16 H17 H20 H22 I01 I03 I04 I07 I10 I11 I15 I16 I17 I18 I25 J01 J04 K01 K03 K06 K07 K08 K10 K12 
+6. Equivalencia: 01_schema.sql == V1 + V2 (cliente mysql)
+  OK: definiciones idénticas
+7. Flyway: instalación limpia V1 -> V2
+  OK: idéntica a 01_schema.sql
+  04_tests sobre esquema Flyway: 165 pruebas, 0 fallidas
+8. Migración de una base anterior CON DATOS (V1 + seed + datos extra) a V2
+  OK: preflight sin bloqueos
+  OK: CHECKSUM de las 8 tablas idéntico antes y después
+  OK: esquema migrado idéntico a 01_schema.sql
+  OK: sin sesiones en conflicto tras migrar
+8b. Camino de fallo: datos que bloquean V2 (enum no canónico, booleano 7)
+  OK: el preflight bloquea (P04 y P05)
+  OK: V2 se detiene: [V2-PRE] Hay valores enum no can?nicos (p
+  Nota: queda el procedimiento auxiliar tmp_v2_precondiciones (V2 lo elimina al reintentar)
+  OK: fallo atómico: tablas, vistas, triggers y CHECK siguen siendo los de V1
+  OK: los datos no se modificaron
+  OK: tras corregir y reparar, V2 se aplica
+  OK: esquema final idéntico a 01_schema.sql
+9. Migración de V1 + seed a V2 y batería completa
+  04_tests sobre base migrada: 165 pruebas, 0 fallidas
+10. Activación de una decisión aprobada: P1 y P3 como V3 y V4 con Flyway
+  05_tests tras V3+V4: 22 pruebas, 0 fallidas
+11. Estado final: base de desarrollo limpia con seed
+RESULTADO: TODO CORRECTO
