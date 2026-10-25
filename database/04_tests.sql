@@ -1,8 +1,10 @@
 -- =============================================================================
 -- 04_tests.sql
--- Validación técnica de la base de datos (pruebas SQL) · esquema V2.
--- Requiere: 01_schema.sql (o migraciones V1+V2) y 02_seed.sql recién
+-- Validación técnica de la base de datos (pruebas SQL) · almuerzo 13:00-14:00.
+-- Requiere: 01_schema.sql (o V1+V2+V3) y 02_seed.sql recién
 -- ejecutados, SIN las migraciones pendientes (para esas: 05 y 06).
+-- Sobre instalaciones V1+V2, A12 y K01 detectan los DEFAULT históricos.
+-- V3 actualiza solo los DEFAULT; aplicar aquí únicamente en una BD de prueba.
 -- Ejecutar SOLO en desarrollo o pruebas: crea procedimientos tst_* temporales.
 --
 -- Cómo funciona:
@@ -160,13 +162,17 @@ CALL tst_verificar('A06', 'SQL', 'Ninguna FK de historial usa ON DELETE CASCADE 
   'SELECT GROUP_CONCAT(constraint_name ORDER BY constraint_name) FROM information_schema.referential_constraints WHERE constraint_schema = ''horarios_ueb'' AND delete_rule = ''CASCADE''',
   'fk_docente_especialidad_docente,fk_restriccion_horaria_docente');
 CALL tst_verificar('A07', 'SQL', 'Bloques válidos por semana derivados de los parámetros (Sección 4.4)',
-  'SELECT COUNT(*) FROM v_bloque_valido WHERE periodo_id = 2', '32');
+  'SELECT COUNT(*) FROM v_bloque_valido WHERE periodo_id = 2', '33');
 CALL tst_verificar('A08', 'SQL', 'Bloques válidos de lunes a viernes por día',
   'SELECT COUNT(*) FROM v_bloque_valido WHERE periodo_id = 2 AND dia = 3', '6');
-CALL tst_verificar('A09', 'SQL', 'Bloques válidos del sábado: 07-09 y 09-11',
-  'SELECT GROUP_CONCAT(TIME_FORMAT(hora_inicio, ''%H'') ORDER BY hora_inicio) FROM v_bloque_valido WHERE periodo_id = 2 AND dia = 6', '07,09');
-CALL tst_verificar('A10', 'SQL', 'El bloque de 11 a 13 (almuerzo) no es válido',
-  'SELECT COUNT(*) FROM v_bloque_valido WHERE hora_inicio = ''11:00:00''', '0');
+CALL tst_verificar('A09', 'SQL', 'Bloques válidos del sábado: 07-09, 09-11 y 11-13',
+  'SELECT GROUP_CONCAT(TIME_FORMAT(hora_inicio, ''%H'') ORDER BY hora_inicio) FROM v_bloque_valido WHERE periodo_id = 2 AND dia = 6', '07,09,11');
+CALL tst_verificar('A10', 'SQL', 'El bloque de 11 a 13 es válido los seis días: termina al iniciar el almuerzo',
+  'SELECT COUNT(*) FROM v_bloque_valido WHERE periodo_id = 2 AND hora_inicio = ''11:00:00''', '6');
+CALL tst_verificar('A11', 'SQL', 'La cuadrícula conserva el ancla de las 07:00 y no se reinicia a las 14:00',
+  'SELECT GROUP_CONCAT(TIME_FORMAT(hora_inicio, ''%H'') ORDER BY hora_inicio) FROM v_bloque_valido WHERE periodo_id = 2 AND dia = 1', '07,09,11,15,17,19');
+CALL tst_verificar('A12', 'SQL', 'Los valores DEFAULT SQL de almuerzo son 13:00-14:00',
+  'SELECT GROUP_CONCAT(column_default ORDER BY ordinal_position SEPARATOR ''-'') FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = ''periodo_academico'' AND column_name IN (''almuerzo_inicio'', ''almuerzo_fin'')', '13:00:00-14:00:00');
 
 -- =============================================================================
 -- B. Verificación de los datos de prueba (reglas del backend sobre el seed)
@@ -279,11 +285,11 @@ CALL tst_verificar('E14', 'SQL', 'Sus especialidades y restricciones se eliminar
 -- F. Sesiones: franja, almuerzo, duración y periodo (triggers -> error 1644)
 --    Incluye la prueba 1 de la Tabla 26 (almuerzo).
 -- =============================================================================
-CALL tst_esperar_error_bd('F01', 'RED', 'Red de seguridad para T26-1: la BD rechaza 11 a 13 (la prueba de aceptación con mensaje es Java)', '[BD-04]',
-  'INSERT INTO sesion (horario_id, grupo_id, dia, hora_inicio, hora_fin) VALUES (2, 21, 4, ''11:00'', ''13:00'')');
+CALL tst_esperar_exito('F01', 'RED', '11:00-13:00 no se solapa con el almuerzo; también cabe en la jornada del sábado',
+  'INSERT INTO sesion (horario_id, grupo_id, dia, hora_inicio, hora_fin) VALUES (2, 21, 6, ''11:00'', ''13:00'')');
 CALL tst_esperar_exito('F02', 'RED', 'Red de seguridad para T26-1: la BD acepta 9 a 11',
   'INSERT INTO sesion (horario_id, grupo_id, dia, hora_inicio, hora_fin) VALUES (2, 21, 5, ''09:00'', ''11:00'')');
-CALL tst_esperar_exito('F03', 'RED', 'Red de seguridad para T26-1: la BD acepta 13 a 15',
+CALL tst_esperar_error_bd('F03', 'RED', '13:00-15:00 se solapa con el almuerzo', '[BD-04]',
   'INSERT INTO sesion (horario_id, grupo_id, dia, hora_inicio, hora_fin) VALUES (2, 21, 2, ''13:00'', ''15:00'')');
 CALL tst_esperar_error_bd('F04', 'RED', 'Sesión de 21 a 23 excede la franja entre semana', '[BD-03]',
   'INSERT INTO sesion (horario_id, grupo_id, dia, hora_inicio, hora_fin) VALUES (2, 21, 1, ''21:00'', ''23:00'')');
@@ -292,11 +298,11 @@ CALL tst_esperar_error_bd('F05', 'RED', 'Sesión del sábado de 13 a 15 excede l
 CALL tst_esperar_error_bd('F06', 'RED', 'Sesión antes de las 7:00', '[BD-03]',
   'INSERT INTO sesion (horario_id, grupo_id, dia, hora_inicio, hora_fin) VALUES (2, 21, 1, ''05:00'', ''07:00'')');
 CALL tst_esperar_error_bd('F07', 'RED', 'Sesión de 3 horas en un curso de 2 horas', '[BD-02]',
-  'INSERT INTO sesion (horario_id, grupo_id, dia, hora_inicio, hora_fin) VALUES (2, 21, 1, ''13:00'', ''16:00'')');
+  'INSERT INTO sesion (horario_id, grupo_id, dia, hora_inicio, hora_fin) VALUES (2, 21, 1, ''16:00'', ''19:00'')');
 CALL tst_esperar_error_bd('F08', 'SQL', 'Sesión que une grupo de 2026-1 con horario de 2026-2', '[BD-01]',
   'INSERT INTO sesion (horario_id, grupo_id, dia, hora_inicio, hora_fin) VALUES (2, 1, 2, ''15:00'', ''17:00'')');
 CALL tst_esperar_error_bd('F09', 'RED', 'Mover una sesión existente al almuerzo (UPDATE)', '[BD-04]',
-  'UPDATE sesion SET hora_inicio = ''11:00'', hora_fin = ''13:00'' WHERE horario_id = 2 AND grupo_id = 18');
+  'UPDATE sesion SET hora_inicio = ''13:00'', hora_fin = ''15:00'' WHERE horario_id = 2 AND grupo_id = 18');
 CALL tst_esperar_exito('F10', 'SQL', 'Mover una sesión existente a otro bloque válido (UPDATE)',
   'UPDATE sesion SET dia = 4, hora_inicio = ''19:00'', hora_fin = ''21:00'' WHERE horario_id = 2 AND grupo_id = 18');
 CALL tst_esperar_error_bd('F11', 'SQL', 'Cambiar de periodo un grupo con sesiones', '[BD-05]',
@@ -305,6 +311,12 @@ CALL tst_esperar_error_bd('F12', 'SQL', 'Cambiar de periodo un horario con sesio
   'UPDATE horario SET periodo_id = 1 WHERE id = 2');
 CALL tst_esperar_error_bd('F13', 'SQL', 'Eliminar un horario PUBLICADO (historial)', '[BD-07]',
   'DELETE FROM horario WHERE id = 1');
+CALL tst_esperar_error_bd('F14', 'RED', '12:00-14:00 se solapa con el almuerzo aunque termine a las 14:00', '[BD-04]',
+  'INSERT INTO sesion (horario_id, grupo_id, dia, hora_inicio, hora_fin) VALUES (2, 21, 1, ''12:00'', ''14:00'')');
+CALL tst_esperar_exito('F15', 'RED', '14:00-16:00 no tiene conflicto de almuerzo: la alineación con bloques se valida aparte en Java',
+  'INSERT INTO sesion (horario_id, grupo_id, dia, hora_inicio, hora_fin) VALUES (2, 21, 1, ''14:00'', ''16:00'')');
+CALL tst_verificar('F16', 'SQL', '14:00-16:00 sigue fuera de la cuadrícula anclada a las 07:00',
+  'SELECT COUNT(*) FROM v_bloque_valido WHERE periodo_id = 2 AND dia = 1 AND hora_inicio = ''14:00:00'' AND hora_fin = ''16:00:00''', '0');
 
 -- =============================================================================
 -- G. Parámetros (Tabla 26, pruebas 4 y 5) y reglas de consulta
@@ -327,16 +339,16 @@ CALL tst_verificar('G08', 'SQL', 'Cálculo de BD para T26-5: el grupo con 10 ins
   'SELECT candidato_cierre FROM v_grupo_cupo WHERE grupo_id = 16', '0');
 CALL tst_verificar('G09', 'SQL', 'Cálculo de BD para T26-5: ningún grupo se cierra ni se borra solo',
   'SELECT COUNT(*) FROM grupo WHERE id IN (15, 16)', '2');
-CALL tst_esperar_exito('G10', 'SQL', 'Ampliar el almuerzo a 12:00-14:00 desde la configuración',
-  'UPDATE periodo_academico SET almuerzo_fin = ''14:00:00'' WHERE id = 2');
-CALL tst_verificar('G11', 'SQL', 'Con almuerzo 12-14 la cuadrícula se recalcula (13-15 deja de ser válido)',
-  'SELECT COUNT(*) FROM v_bloque_valido WHERE periodo_id = 2 AND hora_inicio = ''13:00:00''', '0');
+CALL tst_esperar_exito('G10', 'SQL', 'Ampliar el almuerzo a 11:00-14:00 desde la configuración',
+  'UPDATE periodo_academico SET almuerzo_inicio = ''11:00:00'' WHERE id = 2');
+CALL tst_verificar('G11', 'SQL', 'Con almuerzo 11-14 la cuadrícula se recalcula (11-13 deja de ser válido)',
+  'SELECT COUNT(*) FROM v_bloque_valido WHERE periodo_id = 2 AND hora_inicio = ''11:00:00''', '0');
 CALL tst_verificar('G12', 'INSUMO', 'Vacío 4: las sesiones ya armadas que quedan en conflicto se pueden listar',
   'SELECT COUNT(*) FROM sesion s JOIN horario h ON h.id = s.horario_id JOIN periodo_academico p ON p.id = h.periodo_id WHERE h.id = 2 AND s.grupo_id <> 21 AND s.hora_inicio < p.almuerzo_fin AND s.hora_fin > p.almuerzo_inicio', '5');
-CALL tst_esperar_error_bd('G13', 'RED', 'Con almuerzo 12-14 una sesión nueva de 13 a 15 se rechaza', '[BD-04]',
-  'INSERT INTO sesion (horario_id, grupo_id, dia, hora_inicio, hora_fin) VALUES (2, 20, 1, ''13:00'', ''15:00'')');
-CALL tst_esperar_exito('G14', 'SQL', 'Restaurar almuerzo 12:00-13:00',
-  'UPDATE periodo_academico SET almuerzo_fin = ''13:00:00'' WHERE id = 2');
+CALL tst_esperar_error_bd('G13', 'RED', 'Con almuerzo 11-14 una sesión nueva de 11 a 13 se rechaza', '[BD-04]',
+  'INSERT INTO sesion (horario_id, grupo_id, dia, hora_inicio, hora_fin) VALUES (2, 20, 1, ''11:00'', ''13:00'')');
+CALL tst_esperar_exito('G14', 'SQL', 'Restaurar almuerzo 13:00-14:00',
+  'UPDATE periodo_academico SET almuerzo_inicio = ''13:00:00'' WHERE id = 2');
 CALL tst_verificar('G15', 'INSUMO', 'Insumo de T26-3 (BK03 en Java): el grupo 19 tiene 1 par de días consecutivos',
   'SELECT COUNT(*) FROM sesion s1 JOIN sesion s2 ON s2.horario_id = s1.horario_id AND s2.grupo_id = s1.grupo_id AND s2.dia = s1.dia + 1 WHERE s1.horario_id = 2 AND s1.grupo_id = 19', '1');
 CALL tst_verificar('G16', 'INSUMO', 'Insumo de T26-2 (BK02 en Java): lunes 15-17 queda fuera de la disponibilidad del docente 4',
@@ -421,8 +433,8 @@ START TRANSACTION;
 CALL tst_verificar('I01', 'SQL', 'Con los datos de prueba no hay sesiones en conflicto con los parámetros',
   'SELECT COUNT(*) FROM v_sesion_conflicto_parametros', '0');
 -- Almuerzo
-CALL tst_esperar_exito('I02', 'SQL', 'Ampliar el almuerzo de 2026-2 a 12:00-14:00',
-  'UPDATE periodo_academico SET almuerzo_fin = ''14:00:00'' WHERE id = 2');
+CALL tst_esperar_exito('I02', 'SQL', 'Ampliar el almuerzo de 2026-2 a 11:00-14:00',
+  'UPDATE periodo_academico SET almuerzo_inicio = ''11:00:00'' WHERE id = 2');
 CALL tst_verificar('I03', 'SQL', 'Se marcan 5 sesiones del borrador por ALMUERZO',
   'SELECT COUNT(*) FROM v_sesion_conflicto_parametros WHERE horario_id = 2 AND motivo = ''ALMUERZO''', '5');
 CALL tst_verificar('I04', 'SQL', 'Las mismas 5 quedan fuera de la CUADRICULA recalculada',
@@ -433,8 +445,8 @@ CALL tst_esperar_error_bd('I06', 'RED', 'Mover una sesión en conflicto a otro b
   'UPDATE sesion SET dia = 3 WHERE horario_id = 2 AND grupo_id = 14 AND dia = 4');
 CALL tst_verificar('I07', 'SQL', 'Quedan 4 sesiones marcadas por ALMUERZO',
   'SELECT COUNT(*) FROM v_sesion_conflicto_parametros WHERE horario_id = 2 AND motivo = ''ALMUERZO''', '4');
-CALL tst_esperar_exito('I08', 'SQL', 'Restaurar el almuerzo 12:00-13:00',
-  'UPDATE periodo_academico SET almuerzo_fin = ''13:00:00'' WHERE id = 2');
+CALL tst_esperar_exito('I08', 'SQL', 'Restaurar el almuerzo 13:00-14:00',
+  'UPDATE periodo_academico SET almuerzo_inicio = ''13:00:00'' WHERE id = 2');
 -- Franja
 CALL tst_esperar_exito('I09', 'SQL', 'Mover el inicio de la franja L-V de 2026-2 a las 08:00',
   'UPDATE periodo_academico SET hora_inicio_semana = ''08:00:00'' WHERE id = 2');
@@ -470,14 +482,14 @@ CALL tst_verificar('I23', 'SQL', 'El cupo base no se propaga a los grupos existe
   'SELECT cupo_maximo FROM grupo WHERE id = 12', '40');
 -- Periodo con horario PUBLICADO (riesgo que cubre la decisión D2)
 CALL tst_esperar_exito('I24', 'SQL', 'D2 pendiente (vigente): se permite cambiar el almuerzo de un periodo con horario PUBLICADO',
-  'UPDATE periodo_academico SET almuerzo_fin = ''14:00:00'' WHERE id = 1');
+  'UPDATE periodo_academico SET almuerzo_inicio = ''11:00:00'' WHERE id = 1');
 CALL tst_verificar('I25', 'SQL', 'Consecuencia: 2 sesiones del horario PUBLICADO quedan en conflicto con su propio periodo',
   'SELECT COUNT(*) FROM v_sesion_conflicto_parametros WHERE horario_id = 1 AND estado_horario = ''PUBLICADO'' AND motivo = ''ALMUERZO''', '2');
 
 ROLLBACK;
 
 CALL tst_verificar('I26', 'SQL', 'Tras ROLLBACK de I, los parámetros vuelven a sus valores iniciales',
-  'SELECT CONCAT(almuerzo_fin, '' '', hora_inicio_semana, '' '', duracion_bloque_min, '' '', max_sesiones_semana, '' '', cupo_maximo_base) FROM periodo_academico WHERE id = 2', '13:00:00 07:00:00 120 4 40');
+  'SELECT CONCAT(almuerzo_inicio, '' '', almuerzo_fin, '' '', hora_inicio_semana, '' '', duracion_bloque_min, '' '', max_sesiones_semana, '' '', cupo_maximo_base) FROM periodo_academico WHERE id = 2', '13:00:00 14:00:00 07:00:00 120 4 40');
 
 -- =============================================================================
 -- J. Integridad histórica al cambiar docentes, cursos y restricciones
@@ -527,7 +539,7 @@ START TRANSACTION;
 
 CALL tst_verificar('K01', 'SQL', 'Huella SHA-256 de columnas (tabla, columna, tipo, nulabilidad, default, collation)',
   'SELECT SHA2(GROUP_CONCAT(CONCAT_WS(''|'', table_name, ordinal_position, column_name, column_type, is_nullable, IFNULL(column_default, ''-''), IFNULL(collation_name, ''-'')) ORDER BY table_name, ordinal_position SEPARATOR '';''), 256) FROM information_schema.columns WHERE table_schema = ''horarios_ueb'' AND table_name IN (''periodo_academico'',''docente'',''docente_especialidad'',''restriccion_horaria'',''curso'',''grupo'',''horario'',''sesion'')',
-  '3cad7286b09207d269d78c2a7604e8049d4b8ac133f5b2b583a18a7850ae4299');
+  '1df321f083f00f922fb7ae7d06d78787c51f4999f3cf8b8450484b5f4f664ca7');
 CALL tst_verificar('K02', 'SQL', 'Nombres exactos de las 8 claves foráneas y sus columnas',
   'SELECT GROUP_CONCAT(CONCAT(constraint_name, '':'', table_name, ''.'', column_name, ''->'', referenced_table_name, ''.'', referenced_column_name) ORDER BY constraint_name SEPARATOR '','') FROM information_schema.key_column_usage WHERE table_schema = ''horarios_ueb'' AND referenced_table_name IS NOT NULL',
   'fk_docente_especialidad_docente:docente_especialidad.docente_id->docente.id,fk_grupo_curso:grupo.curso_id->curso.id,fk_grupo_docente:grupo.docente_id->docente.id,fk_grupo_periodo_academico:grupo.periodo_id->periodo_academico.id,fk_horario_periodo_academico:horario.periodo_id->periodo_academico.id,fk_restriccion_horaria_docente:restriccion_horaria.docente_id->docente.id,fk_sesion_grupo:sesion.grupo_id->grupo.id,fk_sesion_horario:sesion.horario_id->horario.id');

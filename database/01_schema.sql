@@ -18,9 +18,10 @@
 --   checks             : ck_<tabla>_<descripción>
 --   índices            : idx_<tabla>_<columnas>
 --
--- Versión del esquema: V2 (segunda revisión técnica, 2026-10-21).
--- Equivale exactamente a aplicar migraciones/V1__esquema_inicial.sql y
--- migraciones/V2__revision_tecnica.sql (verificado con mysqldump).
+-- Esquema V1+V2 con DEFAULT de almuerzo 13:00-14:00, como V3, para nuevas
+-- instalaciones. V1 y V2 se conservan sin cambios. La migración de bases
+-- existentes requiere inspeccionar antes el esquema real y los publicados;
+-- V3 solo cambia DEFAULT y conserva los parámetros de todos los periodos.
 --
 -- NO DESTRUCTIVO: no borra nada. Si la base ya tiene las tablas, el script
 -- se detiene en el primer CREATE TABLE (error 1050) sin tocar los datos.
@@ -41,8 +42,8 @@ SET SESSION sql_mode = 'STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_F
 -- 1. periodo_academico  (entidad principal: PeriodoAcademico)
 --    Guarda el semestre y, como atributos propios, los parámetros
 --    institucionales configurables que se aplican a ese periodo (RF09, EF08).
---    Los valores DEFAULT son las cifras iniciales documentadas (Tabla 10 y
---    Sección 4.4 del informe); cada periodo conserva sus propios valores, de
+--    Los valores DEFAULT son los parámetros institucionales iniciales;
+--    cada periodo conserva sus propios valores, de
 --    modo que cambiar una cifra es un UPDATE, no un cambio de código.
 -- -----------------------------------------------------------------------------
 CREATE TABLE periodo_academico (
@@ -56,8 +57,8 @@ CREATE TABLE periodo_academico (
   hora_inicio_sabado   TIME          NOT NULL DEFAULT '07:00:00',
   hora_fin_sabado      TIME          NOT NULL DEFAULT '13:00:00',
   -- Bloqueo de almuerzo (aplica todos los días)
-  almuerzo_inicio      TIME          NOT NULL DEFAULT '12:00:00',
-  almuerzo_fin         TIME          NOT NULL DEFAULT '13:00:00',
+  almuerzo_inicio      TIME          NOT NULL DEFAULT '13:00:00',
+  almuerzo_fin         TIME          NOT NULL DEFAULT '14:00:00',
   -- Cuadrícula de bloques fijos y frecuencia
   duracion_bloque_min  SMALLINT      NOT NULL DEFAULT 120 COMMENT 'Duración del bloque fijo en minutos',
   max_sesiones_semana  TINYINT       NOT NULL DEFAULT 4   COMMENT 'Máximo de sesiones semanales por curso',
@@ -489,7 +490,9 @@ DELIMITER ;
 -- Bloques fijos válidos por periodo y día, derivados de los parámetros
 -- (Sección 4.4): inicios = franja_inicio + k * duración, descartando los que
 -- exceden la franja o pisan el almuerzo. Con los valores iniciales resultan
--- 6 bloques por día de lunes a viernes y 2 el sábado (32 por semana).
+-- 6 bloques por día de lunes a viernes y 3 el sábado (33 por semana).
+-- La cuadrícula conserva su ancla: 07, 09, 11, 15, 17, 19 entre semana;
+-- 07, 09, 11 el sábado. No se reinicia a las 14:00 después del almuerzo.
 CREATE VIEW v_bloque_valido AS
 WITH RECURSIVE
   dias (dia) AS (

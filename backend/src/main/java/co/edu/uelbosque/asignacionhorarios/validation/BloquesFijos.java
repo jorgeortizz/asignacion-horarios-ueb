@@ -3,7 +3,7 @@ import co.edu.uelbosque.asignacionhorarios.model.PeriodoAcademico;
 import java.time.*;
 import java.util.*;
 import org.springframework.stereotype.Component;
-/** Reproduce la discretización por franja sin modificar los parámetros. */
+/** Bloques anclados al inicio de la jornada; el almuerzo filtra sin reanclar la cuadrícula. */
 @Component
 public class BloquesFijos {
     public List<LocalTime> inicios(PeriodoAcademico p, byte dia) {

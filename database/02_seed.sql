@@ -24,11 +24,12 @@ SET NAMES utf8mb4;
 START TRANSACTION;
 
 -- -----------------------------------------------------------------------------
--- Periodos académicos (parámetros iniciales documentados: DEFAULT del esquema)
+-- Periodos académicos ficticios: almuerzo explícito 13:00-14:00 para que
+-- este fixture sea independiente de los DEFAULT de migraciones históricas.
 -- -----------------------------------------------------------------------------
-INSERT INTO periodo_academico (id, nombre, fecha_inicio, fecha_fin) VALUES
-  (1, '2026-1', '2026-01-26', '2026-06-06'),
-  (2, '2026-2', '2026-07-27', '2026-11-28');
+INSERT INTO periodo_academico (id, nombre, fecha_inicio, fecha_fin, almuerzo_inicio, almuerzo_fin) VALUES
+  (1, '2026-1', '2026-01-26', '2026-06-06', '13:00:00', '14:00:00'),
+  (2, '2026-2', '2026-07-27', '2026-11-28', '13:00:00', '14:00:00');
 
 -- -----------------------------------------------------------------------------
 -- Docentes (ficticios)
@@ -137,8 +138,8 @@ INSERT INTO sesion (horario_id, grupo_id, dia, hora_inicio, hora_fin) VALUES
   (1, 1, 5, '07:00:00', '09:00:00'),  -- Programación I · viernes
   (1, 2, 2, '09:00:00', '11:00:00'),  -- Bases de datos I · martes
   (1, 2, 4, '09:00:00', '11:00:00'),  -- Bases de datos I · jueves
-  (1, 3, 1, '13:00:00', '15:00:00'),  -- Redes · lunes
-  (1, 3, 3, '13:00:00', '15:00:00'),  -- Redes · miércoles
+  (1, 3, 1, '11:00:00', '13:00:00'),  -- Redes · lunes
+  (1, 3, 3, '11:00:00', '13:00:00'),  -- Redes · miércoles
   (1, 4, 4, '19:00:00', '21:00:00');  -- Inteligencia artificial · jueves
 
 -- Publicación del horario histórico (el Comité lo aprobó; no es automática).
@@ -153,15 +154,15 @@ INSERT INTO sesion (horario_id, grupo_id, dia, hora_inicio, hora_fin) VALUES
   (2, 11, 3, '07:00:00', '09:00:00'),
   (2, 11, 5, '07:00:00', '09:00:00'),
   -- Grupo 12 · Programación I-02 · Ana (en horas distintas al grupo 01, vacío 6)
-  (2, 12, 1, '13:00:00', '15:00:00'),
-  (2, 12, 3, '13:00:00', '15:00:00'),
-  (2, 12, 5, '13:00:00', '15:00:00'),
+  (2, 12, 1, '11:00:00', '13:00:00'),
+  (2, 12, 3, '11:00:00', '13:00:00'),
+  (2, 12, 5, '11:00:00', '13:00:00'),
   -- Grupo 13 · Estructuras de datos-01 · Luisa
   (2, 13, 1, '09:00:00', '11:00:00'),
   (2, 13, 4, '09:00:00', '11:00:00'),
   -- Grupo 14 · Bases de datos I-01 · Ana
   (2, 14, 2, '09:00:00', '11:00:00'),
-  (2, 14, 4, '13:00:00', '15:00:00'),
+  (2, 14, 4, '11:00:00', '13:00:00'),
   -- Grupo 15 · Matemáticas discretas-01 · Diana
   (2, 15, 2, '07:00:00', '09:00:00'),
   (2, 15, 4, '07:00:00', '09:00:00'),
@@ -169,7 +170,7 @@ INSERT INTO sesion (horario_id, grupo_id, dia, hora_inicio, hora_fin) VALUES
   (2, 16, 1, '15:00:00', '17:00:00'),
   (2, 16, 3, '15:00:00', '17:00:00'),
   -- Grupo 17 · Redes-01 · Carlos
-  (2, 17, 2, '13:00:00', '15:00:00'),
+  (2, 17, 2, '11:00:00', '13:00:00'),
   (2, 17, 4, '15:00:00', '17:00:00'),
   -- Grupo 18 · Inteligencia artificial-01 · Jorge (solo después de las 18:00)
   (2, 18, 3, '19:00:00', '21:00:00'),
