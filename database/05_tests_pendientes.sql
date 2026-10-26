@@ -158,7 +158,7 @@ ROLLBACK;
 START TRANSACTION;
 
 CALL tst_esperar_error_bd('P3-01', 'SQL', 'Cambiar el almuerzo de 2026-1 (tiene horario PUBLICADO)', '[BD-16]',
-  'UPDATE periodo_academico SET almuerzo_fin = ''14:00:00'' WHERE id = 1');
+  'UPDATE periodo_academico SET almuerzo_inicio = ''11:00:00'' WHERE id = 1');
 CALL tst_esperar_error_bd('P3-02', 'SQL', 'Cambiar la duración del bloque de 2026-1', '[BD-16]',
   'UPDATE periodo_academico SET duracion_bloque_min = 90 WHERE id = 1');
 CALL tst_esperar_error_bd('P3-03', 'SQL', 'Cambiar la franja del sábado de 2026-1', '[BD-16]',
@@ -168,7 +168,7 @@ CALL tst_esperar_error_bd('P3-04', 'SQL', 'Cambiar el máximo de sesiones de 202
 CALL tst_esperar_exito('P3-05', 'SQL', 'Los parámetros de cupo no se congelan (tolerancia y mínimo de 2026-1)',
   'UPDATE periodo_academico SET tolerancia_cupo_pct = 5.00, cupo_minimo = 8 WHERE id = 1');
 CALL tst_esperar_exito('P3-06', 'SQL', 'En 2026-2 (solo borrador) el almuerzo sí se puede cambiar',
-  'UPDATE periodo_academico SET almuerzo_fin = ''14:00:00'' WHERE id = 2');
+  'UPDATE periodo_academico SET almuerzo_inicio = ''11:00:00'' WHERE id = 2');
 CALL tst_verificar('P3-07', 'SQL', 'Las sesiones afectadas del borrador quedan marcadas (vacío 4)',
   'SELECT COUNT(*) FROM v_sesion_conflicto_parametros WHERE horario_id = 2 AND motivo = ''ALMUERZO''', '5');
 CALL tst_esperar_exito('P3-08', 'LIMITE', 'Límite de la BD: publicar 2026-2 con 5 sesiones en conflicto se ACEPTA; la validación previa es Java (BK07)',
@@ -176,14 +176,14 @@ CALL tst_esperar_exito('P3-08', 'LIMITE', 'Límite de la BD: publicar 2026-2 con
 CALL tst_esperar_exito('P3-09', 'SQL', 'Despublicar 2026-1 (D1-b) libera sus parámetros',
   'UPDATE horario SET estado = ''BORRADOR'' WHERE id = 1');
 CALL tst_esperar_exito('P3-10', 'SQL', 'Sin publicado, el almuerzo de 2026-1 se puede cambiar',
-  'UPDATE periodo_academico SET almuerzo_fin = ''14:00:00'' WHERE id = 1');
+  'UPDATE periodo_academico SET almuerzo_inicio = ''11:00:00'' WHERE id = 1');
 CALL tst_verificar('P3-11', 'INSUMO', 'Las 2 sesiones afectadas del horario 1 quedan marcadas antes de republicar',
   'SELECT COUNT(*) FROM v_sesion_conflicto_parametros WHERE horario_id = 1 AND motivo = ''ALMUERZO''', '2');
 
 ROLLBACK;
 
 CALL tst_verificar('P3-12', 'SQL', 'Tras ROLLBACK, 2026-1 vuelve a tener su horario PUBLICADO y su almuerzo original',
-  'SELECT CONCAT(h.estado, '' '', p.almuerzo_fin) FROM horario h JOIN periodo_academico p ON p.id = h.periodo_id WHERE h.id = 1', 'PUBLICADO 13:00:00');
+  'SELECT CONCAT(h.estado, '' '', p.almuerzo_inicio, '' '', p.almuerzo_fin) FROM horario h JOIN periodo_academico p ON p.id = h.periodo_id WHERE h.id = 1', 'PUBLICADO 13:00:00 14:00:00');
 
 -- -----------------------------------------------------------------------------
 -- Resultados

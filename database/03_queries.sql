@@ -248,7 +248,7 @@ SELECT g.id AS grupo_id, c.nombre AS curso, g.codigo AS grupo,
 
 -- Q12i. Bloques válidos libres para un docente en un horario (insumo del
 --       generador; las restricciones se filtran luego en Java).
---       Esperado (docente 4, horario 2): 31 bloques (32 menos miércoles 19-21).
+--       Esperado (docente 4, horario 2): 32 bloques (33 menos miércoles 19-21).
 SELECT b.dia, b.hora_inicio, b.hora_fin
   FROM v_bloque_valido b
   JOIN horario h ON h.periodo_id = b.periodo_id AND h.id = @horario_id
@@ -297,10 +297,11 @@ SELECT c.horario_id, c.estado_horario, c.motivo, d.dia_nombre, c.hora_inicio, c.
 -- -----------------------------------------------------------------------------
 -- Q15. Impacto de un cambio de parámetros ANTES de guardarlo (BK12): cuántas
 --      sesiones quedarían en conflicto con un almuerzo propuesto.
---      Esperado (2026-2, almuerzo 12:00-14:00): 5 sesiones, todas en BORRADOR.
+--      Esperado con el seed nuevo (2026-2, almuerzo 13:00-14:00): 0 sesiones.
+--      Los datos existentes pueden tener conflictos; esta consulta no los cambia.
 -- -----------------------------------------------------------------------------
 SET @q15_periodo := 2;
-SET @q15_alm_ini := '12:00:00';
+SET @q15_alm_ini := '13:00:00';
 SET @q15_alm_fin := '14:00:00';
 
 SELECT h.estado AS estado_horario, COUNT(*) AS sesiones_afectadas

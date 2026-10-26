@@ -3,6 +3,7 @@
 # ejecutar_todo.sh — Batería reproducible de la base de datos (solo DESARROLLO)
 #
 # Uso:
+#   TEST_DB_RESET='BORRAR horarios_ueb SOLO PRUEBAS' \
 #   MYSQL="mysql -uroot -p<clave> -h127.0.0.1" \
 #   JDBC_URL="jdbc:mysql://127.0.0.1:3306/horarios_ueb" DB_USER=root DB_PASSWORD=<clave> \
 #   FLYWAY=/ruta/flyway  tools/ejecutar_todo.sh  [carpeta_evidencia]
@@ -13,6 +14,19 @@
 # =============================================================================
 set -uo pipefail
 cd "$(dirname "$0")/.."
+# La presencia de V3 no autoriza los reinicios de esta batería. La conexión
+# debe apuntar a una base desechable, nunca a la base que se desea conservar.
+if [ "${TEST_DB_RESET:-}" != 'BORRAR horarios_ueb SOLO PRUEBAS' ]; then
+  echo "Batería detenida: requiere TEST_DB_RESET='BORRAR horarios_ueb SOLO PRUEBAS' para una base desechable. No se ejecutó ningún cambio." >&2
+  exit 2
+fi
+# El esquema de nuevas instalaciones ya incorpora el almuerzo 13:00-14:00.
+# La migración solo cambia DEFAULT, sin modificar los periodos existentes.
+MIGRACION_ALMUERZO=migraciones/V3__ajuste_horario_almuerzo.sql
+if [ ! -f "$MIGRACION_ALMUERZO" ]; then
+  echo "Falta $MIGRACION_ALMUERZO. No se ejecutó ningún cambio." >&2
+  exit 2
+fi
 MYSQL=${MYSQL:-"mysql -uroot"}
 M="$MYSQL --default-character-set=utf8mb4"
 EV=${1:-evidencia}
@@ -70,21 +84,21 @@ grep -E "\| FALLA " "$EV/04_tests_sobre_V1.txt" | awk -F'|' '{gsub(/ /,"",$3); p
 log "  Pruebas que fallan sobre V1 (esperado: > 0): $(wc -w < "$EV/04_tests_sobre_V1_fallidas.txt") -> $(cat "$EV/04_tests_sobre_V1_fallidas.txt")"
 [ "$(wc -w < "$EV/04_tests_sobre_V1_fallidas.txt")" -gt 0 ] || fallo "las pruebas no distinguen V1 de V2"
 
-log "6. Equivalencia: 01_schema.sql == V1 + V2 (cliente mysql)"
-reset; $M horarios_ueb < migraciones/V1__esquema_inicial.sql && $M horarios_ueb < migraciones/V2__revision_tecnica.sql
-tools/huella_esquema.sh "$M" horarios_ueb > "$EV/huella_V1_V2_mysql.txt"
-diff -q "$EV/huella_01_schema.txt" "$EV/huella_V1_V2_mysql.txt" > /dev/null && log "  OK: definiciones idénticas" || fallo "01_schema.sql difiere de V1+V2"
+log "6. Equivalencia: 01_schema.sql == V1 + V2 + V3 (cliente mysql)"
+reset; $M horarios_ueb < migraciones/V1__esquema_inicial.sql && $M horarios_ueb < migraciones/V2__revision_tecnica.sql && $M horarios_ueb < "$MIGRACION_ALMUERZO"
+tools/huella_esquema.sh "$M" horarios_ueb > "$EV/huella_V1_V2_V3_mysql.txt"
+diff -q "$EV/huella_01_schema.txt" "$EV/huella_V1_V2_V3_mysql.txt" > /dev/null && log "  OK: definiciones idénticas" || fallo "01_schema.sql difiere de V1+V2+V3"
 
 if [ -n "${FLYWAY:-}" ]; then
   FW="$FLYWAY -url=${JDBC_URL} -user=${DB_USER} -password=${DB_PASSWORD:-} -locations=filesystem:migraciones"
-  log "7. Flyway: instalación limpia V1 -> V2"
+  log "7. Flyway: instalación limpia V1 -> V2 -> V3"
   reset; $FW migrate > "$EV/flyway_limpia.txt" 2>&1 || fallo "flyway migrate (limpia)"
-  tools/huella_esquema.sh "$M" horarios_ueb > "$EV/huella_V1_V2_flyway.txt"
-  diff -q "$EV/huella_01_schema.txt" "$EV/huella_V1_V2_flyway.txt" > /dev/null && log "  OK: idéntica a 01_schema.sql" || fallo "Flyway difiere de 01_schema.sql"
+  tools/huella_esquema.sh "$M" horarios_ueb > "$EV/huella_V1_V2_V3_flyway.txt"
+  diff -q "$EV/huella_01_schema.txt" "$EV/huella_V1_V2_V3_flyway.txt" > /dev/null && log "  OK: idéntica a 01_schema.sql" || fallo "Flyway difiere de 01_schema.sql"
   correr 02_seed.sql /dev/null
   correr 04_tests.sql "$EV/04_tests_flyway.txt"; resumen_pruebas "$EV/04_tests_flyway.txt" "04_tests sobre esquema Flyway"
 
-  log "8. Migración de una base anterior CON DATOS (V1 + seed + datos extra) a V2"
+  log "8. Migración de una base anterior CON DATOS (V1 + seed + datos extra) a V3"
   reset; $M horarios_ueb < migraciones/V1__esquema_inicial.sql; correr 02_seed.sql /dev/null
   $M < tools/datos_extra_migracion.sql || fallo "datos extra"
   correr migraciones/preflight_V2.sql "$EV/preflight_antes.txt"
@@ -119,19 +133,20 @@ if [ -n "${FLYWAY:-}" ]; then
   tools/huella_esquema.sh "$M" horarios_ueb > "$EV/huella_tras_correccion.txt"
   diff -q "$EV/huella_01_schema.txt" "$EV/huella_tras_correccion.txt" > /dev/null && log "  OK: esquema final idéntico a 01_schema.sql" || fallo "esquema tras corrección difiere"
 
-  log "9. Migración de V1 + seed a V2 y batería completa"
+  log "9. Migración de V1 + seed a V3 y batería completa"
   reset; $M horarios_ueb < migraciones/V1__esquema_inicial.sql; correr 02_seed.sql /dev/null
   $FW -baselineVersion=1 baseline > /dev/null 2>&1 && $FW migrate > /dev/null 2>&1 || fallo "flyway (seed)"
   correr 04_tests.sql "$EV/04_tests_migrada.txt"; resumen_pruebas "$EV/04_tests_migrada.txt" "04_tests sobre base migrada"
 
-  log "10. Activación de una decisión aprobada: P1 y P3 como V3 y V4 con Flyway"
+  log "10. Activación de una decisión aprobada: P1 y P3 como V4 y V5 con Flyway"
   TMPM=$(mktemp -d); cp migraciones/V1__esquema_inicial.sql migraciones/V2__revision_tecnica.sql "$TMPM/"
-  cp migraciones/pendientes/P1_D1b_republicar_mismo_horario.sql "$TMPM/V3__republicar_mismo_horario.sql"
-  cp migraciones/pendientes/P3_D2_parametros_con_publicado.sql  "$TMPM/V4__parametros_con_publicado.sql"
+  cp "$MIGRACION_ALMUERZO" "$TMPM/"
+  cp migraciones/pendientes/P1_D1b_republicar_mismo_horario.sql "$TMPM/V4__republicar_mismo_horario.sql"
+  cp migraciones/pendientes/P3_D2_parametros_con_publicado.sql  "$TMPM/V5__parametros_con_publicado.sql"
   reset; $M horarios_ueb < migraciones/V1__esquema_inicial.sql; correr 02_seed.sql /dev/null
   $FLYWAY -url=${JDBC_URL} -user=${DB_USER} -password=${DB_PASSWORD:-} -locations=filesystem:$TMPM -baselineVersion=1 baseline > /dev/null 2>&1
-  $FLYWAY -url=${JDBC_URL} -user=${DB_USER} -password=${DB_PASSWORD:-} -locations=filesystem:$TMPM migrate > "$EV/flyway_V3_V4.txt" 2>&1 || fallo "flyway V3/V4"
-  correr 05_tests_pendientes.sql "$EV/05_tests_flyway_V3_V4.txt"; resumen_pruebas "$EV/05_tests_flyway_V3_V4.txt" "05_tests tras V3+V4"
+  $FLYWAY -url=${JDBC_URL} -user=${DB_USER} -password=${DB_PASSWORD:-} -locations=filesystem:$TMPM migrate > "$EV/flyway_V4_V5.txt" 2>&1 || fallo "flyway V4/V5"
+  correr 05_tests_pendientes.sql "$EV/05_tests_flyway_V4_V5.txt"; resumen_pruebas "$EV/05_tests_flyway_V4_V5.txt" "05_tests tras V4+V5"
   rm -rf "$TMPM"
 fi
 

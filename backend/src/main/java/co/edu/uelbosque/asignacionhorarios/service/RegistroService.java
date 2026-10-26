@@ -44,6 +44,7 @@ public class RegistroService {
         var periodo=Util.requerido(periodos.findById(p.periodoId()), "Periodo");
         var curso=Util.requerido(cursos.findById(p.cursoId()), "Curso");
         var docente=Util.requerido(docentes.findById(p.docenteId()), "Docente");
+        Util.exigir(docente.getCursosHabilitados().stream().anyMatch(c -> c.getId().equals(curso.getId())),"El docente seleccionado no está habilitado para impartir esta asignatura");
         Util.exigir(curso.getSesionesSemanales()<=periodo.getMaxSesionesSemana(),"El curso supera el máximo de sesiones del periodo");
         Util.exigir(curso.getDuracionSesionMin()==periodo.getDuracionBloqueMin(),"Duración de curso incompatible con los bloques del periodo");
         Util.exigir(!grupos.existsByPeriodoIdAndCursoIdAndCodigo(p.periodoId(),p.cursoId(),p.codigo().trim()),"Ya existe este grupo en el periodo");

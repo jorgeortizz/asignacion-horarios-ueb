@@ -41,8 +41,8 @@ class HorarioVigenteTests {
         p.setHoraFinSemana(LocalTime.of(22, 0));
         p.setHoraInicioSabado(LocalTime.of(7, 0));
         p.setHoraFinSabado(LocalTime.of(13, 0));
-        p.setAlmuerzoInicio(LocalTime.of(12, 0));
-        p.setAlmuerzoFin(LocalTime.of(13, 0));
+        p.setAlmuerzoInicio(LocalTime.of(13, 0));
+        p.setAlmuerzoFin(LocalTime.of(14, 0));
         p.setDuracionBloqueMin((short) 120);
         p.setMaxSesionesSemana((byte) 4);
         p.setCupoMaximoBase((short) 40);

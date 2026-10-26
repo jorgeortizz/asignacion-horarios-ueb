@@ -10,6 +10,7 @@ import co.edu.uelbosque.asignacionhorarios.model.TipoRestriccion;
 import co.edu.uelbosque.asignacionhorarios.model.TipoVinculacion;
 import co.edu.uelbosque.asignacionhorarios.repository.SesionRepository;
 import jakarta.persistence.EntityManager;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -33,6 +34,88 @@ class FlujoHorarioTests {
     @Autowired private ConsultaService consultas;
     @Autowired private SesionRepository sesiones;
     @Autowired private EntityManager entityManager;
+
+    @Test
+    void nuevosPeriodosConservanJornadaYDuracionConAlmuerzoDeTreceACatorce() {
+        var p=periodos.crear(new Peticiones.Periodo("Almuerzo nuevo",
+            LocalDate.of(2030,1,15),LocalDate.of(2030,6,15)));
+        persistirYRecargar();
+        var guardado=periodos.obtener(p.getId());
+        assertEquals(LocalTime.of(13,0),guardado.getAlmuerzoInicio());
+        assertEquals(LocalTime.of(14,0),guardado.getAlmuerzoFin());
+        assertEquals(LocalTime.of(7,0),guardado.getHoraInicioSemana());
+        assertEquals(LocalTime.of(22,0),guardado.getHoraFinSemana());
+        assertEquals(LocalTime.of(7,0),guardado.getHoraInicioSabado());
+        assertEquals(LocalTime.of(13,0),guardado.getHoraFinSabado());
+        assertEquals(120,guardado.getDuracionBloqueMin());
+    }
+
+    @Test
+    void generaHastaLasTreceIncluidoSabadoYExcluyeElAlmuerzoSinReanclarBloques() {
+        Datos datos=registrar(4,List.of(
+            new Peticiones.Restriccion((byte)1,LocalTime.of(11,0),LocalTime.of(15,0),
+                TipoRestriccion.FIRME,SentidoRestriccion.DISPONIBLE),
+            new Peticiones.Restriccion((byte)2,LocalTime.of(13,0),LocalTime.of(15,0),
+                TipoRestriccion.FIRME,SentidoRestriccion.DISPONIBLE),
+            new Peticiones.Restriccion((byte)5,LocalTime.of(19,0),LocalTime.of(22,0),
+                TipoRestriccion.FIRME,SentidoRestriccion.DISPONIBLE),
+            new Peticiones.Restriccion((byte)6,LocalTime.of(11,0),LocalTime.of(13,0),
+                TipoRestriccion.FIRME,SentidoRestriccion.DISPONIBLE)));
+
+        var generado=generacion.generar(datos.periodoId());
+        persistirYRecargar();
+
+        assertEquals(3,generado.sesionesGeneradas());
+        assertEquals(1,generado.noUbicadas().getFirst().faltantes());
+        var guardadas=sesiones.findByHorarioIdOrderByDiaAscHoraInicioAsc(generado.horarioId());
+        assertEquals(List.of((byte)1,(byte)5,(byte)6),guardadas.stream().map(s->s.getDia()).toList());
+        assertEquals(List.of(LocalTime.of(11,0),LocalTime.of(19,0),LocalTime.of(11,0)),
+            guardadas.stream().map(s->s.getHoraInicio()).toList());
+        for(var s:guardadas) {
+            assertEquals(120,Duration.between(s.getHoraInicio(),s.getHoraFin()).toMinutes());
+            assertFalse(s.getHoraInicio().isBefore(LocalTime.of(14,0))
+                && s.getHoraFin().isAfter(LocalTime.of(13,0)));
+        }
+    }
+
+    @Test
+    void generacionDespuesDelAlmuerzoConservaElBloqueDeQuinceADiecisiete() {
+        Datos datos=registrar(1,List.of(new Peticiones.Restriccion((byte)1,
+            LocalTime.of(14,0),LocalTime.of(17,0),TipoRestriccion.FIRME,SentidoRestriccion.DISPONIBLE)));
+        var generado=generacion.generar(datos.periodoId());
+        persistirYRecargar();
+        assertEquals(1,generado.sesionesGeneradas());
+        var s=sesiones.findByHorarioIdOrderByDiaAscHoraInicioAsc(generado.horarioId()).getFirst();
+        assertEquals(LocalTime.of(15,0),s.getHoraInicio());
+        assertEquals(LocalTime.of(17,0),s.getHoraFin());
+    }
+
+    @Test
+    void cambioDeAlmuerzoNoAlteraUnHorarioPublicadoNiSusParametros() {
+        Datos datos=registrar(1,List.of(new Peticiones.Restriccion((byte)1,
+            LocalTime.of(13,0),LocalTime.of(15,0),TipoRestriccion.FIRME,SentidoRestriccion.DISPONIBLE)));
+        var p=periodos.obtener(datos.periodoId());
+        periodos.actualizar(p.getId(),new Peticiones.Parametros(p.getHoraInicioSemana(),p.getHoraFinSemana(),
+            p.getHoraInicioSabado(),p.getHoraFinSabado(),LocalTime.of(12,0),LocalTime.of(13,0),
+            (int)p.getDuracionBloqueMin(),(int)p.getMaxSesionesSemana(),(int)p.getCupoMaximoBase(),
+            p.getToleranciaCupoPct(),(int)p.getCupoMinimo()));
+        var generado=generacion.generar(datos.periodoId());
+        horarios.publicar(generado.horarioId());
+        persistirYRecargar();
+        var publicado=horarios.detalle(generado.horarioId());
+        assertEquals(LocalTime.of(13,0),publicado.sesiones().getFirst().horaInicio());
+        var historico=periodos.obtener(datos.periodoId());
+        var parametros=new Peticiones.Parametros(p.getHoraInicioSemana(),p.getHoraFinSemana(),
+            p.getHoraInicioSabado(),p.getHoraFinSabado(),LocalTime.of(13,0),LocalTime.of(14,0),
+            (int)p.getDuracionBloqueMin(),(int)p.getMaxSesionesSemana(),(int)p.getCupoMaximoBase(),
+            p.getToleranciaCupoPct(),(int)p.getCupoMinimo());
+
+        assertThrows(ApiException.class,()->periodos.actualizar(historico.getId(),parametros));
+
+        assertEquals(LocalTime.of(12,0),historico.getAlmuerzoInicio());
+        assertEquals(LocalTime.of(13,0),historico.getAlmuerzoFin());
+        assertEquals(publicado,horarios.detalle(publicado.id()));
+    }
 
     @Test
     void registraGeneraMuevePublicaYConsultaConFiltrosYCsv() {
