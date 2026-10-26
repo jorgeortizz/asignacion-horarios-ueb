@@ -1,0 +1,26 @@
++------+--------+-----------+-----------+----------------------------------------------------------------------------------------+--------------------+----------------------------------------------------------------------------------------------------------------------------+
+| n    | codigo | categoria | resultado | descripcion                                                                            | esperado           | obtenido                                                                                                                   |
++------+--------+-----------+-----------+----------------------------------------------------------------------------------------+--------------------+----------------------------------------------------------------------------------------------------------------------------+
+|    1 | P2-01  | SQL       | OK        | Un horario PUBLICADO no vuelve a BORRADOR                                              | error 1644 [BD-15] | error 1644: [BD-15] Un horario PUBLICADO no vuelve a BORRADOR; cree una copia en borrador para modificarlo.                |
+|    2 | P2-02  | SQL       | OK        | Crear el borrador 80 en 2026-1 para la nueva versión                                   | aceptada           | aceptada                                                                                                                   |
+|    3 | P2-03  | SQL       | OK        | Copiar las sesiones del publicado al borrador 80                                       | aceptada           | aceptada                                                                                                                   |
+|    4 | P2-04  | SQL       | OK        | Ajustar la copia: mover Redes del lunes al martes                                      | aceptada           | aceptada                                                                                                                   |
+|    5 | P2-05  | SQL       | OK        | Publicar la nueva versión                                                              | aceptada           | aceptada                                                                                                                   |
+|    6 | P2-06  | SQL       | OK        | v_horario_vigente: 2026-1 apunta a la versión nueva (80)                               | 80                 | 80                                                                                                                         |
+|    7 | P2-07  | SQL       | OK        | La versión anterior (1) sigue PUBLICADA con Redes el lunes (historial)                 | 1                  | 1                                                                                                                          |
+|    8 | P2-08  | SQL       | OK        | La versión anterior sigue protegida                                                    | error 1644 [BD-08] | error 1644: [BD-08] Horario PUBLICADO: sus sesiones no se insertan, modifican ni eliminan; use el flujo de republicación.  |
+|    9 | P2-09  | LIMITE    | OK        | Cambiar el docente del grupo 3 se permite (el grupo es compartido por ambas versiones) | aceptada           | aceptada                                                                                                                   |
+|   10 | P2-10  | LIMITE    | OK        | Limitación de D1-c: la versión anterior también muestra el docente nuevo               | 2                  | 2                                                                                                                          |
++------+--------+-----------+-----------+----------------------------------------------------------------------------------------+--------------------+----------------------------------------------------------------------------------------------------------------------------+
++-----------+---------+-----------+----------+
+| categoria | pruebas | correctas | fallidas |
++-----------+---------+-----------+----------+
+| LIMITE    |       2 |         2 |        0 |
+| SQL       |       8 |         8 |        0 |
+| TOTAL     |      10 |        10 |        0 |
++-----------+---------+-----------+----------+
++---------------+---------------+----------+
+| mysql_version | total_pruebas | fallidas |
++---------------+---------------+----------+
+| 9.7.2         |            10 |        0 |
++---------------+---------------+----------+
