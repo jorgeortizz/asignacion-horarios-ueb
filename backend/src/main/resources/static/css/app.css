@@ -1,0 +1,11 @@
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; background: #f5f6f7; color: #25313c;
+       font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+.contenedor { width: min(90%, 850px); margin: 10vh auto; padding: 2rem 2.5rem;
+              background: white; border: 1px solid #dfe5e8; border-radius: 12px; }
+.etiqueta { text-transform: uppercase; font-size: .83rem; letter-spacing: .07em; color: #516579; }
+h1 { line-height: 1.2; }
+.estado { display: inline-flex; align-items: center; gap: .7rem; margin-top: 1rem;
+          padding: .7rem 1rem; border-radius: 8px; background: #edf7ee; color: #205a31; }
+.indicador { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #339953; }
+.nota { margin-top: 1.5rem; color: #586777; font-size: .93rem; }

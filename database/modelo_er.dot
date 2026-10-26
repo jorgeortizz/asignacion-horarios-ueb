@@ -1,0 +1,107 @@
+// Modelo entidad-relación (físico) · Módulo de Asignación de Horarios Docente-Curso
+// Render: dot -Tpng -Gdpi=200 modelo_er.dot -o modelo_er.png
+digraph ER {
+  graph [rankdir=TB, splines=spline, nodesep=0.7, ranksep=0.9, fontname="Helvetica", bgcolor="white",
+         label="Modelo entidad-relación · Módulo de Asignación de Horarios Docente-Curso (MySQL 9.7 LTS)\nPK = clave primaria · FK = clave foránea · UK = única · (P) = propuesta técnica pendiente de validación · gris = estructura auxiliar",
+         labelloc=t, fontsize=13];
+  node  [shape=plain, fontname="Helvetica", fontsize=10];
+  edge  [fontname="Helvetica", fontsize=9, color="#333333", dir=both];
+
+  periodo_academico [label=<
+  <table border="0" cellborder="1" cellspacing="0" cellpadding="3">
+    <tr><td bgcolor="#1f4e79" colspan="2"><font color="white"><b>periodo_academico</b></font></td></tr>
+    <tr><td align="left"><b>PK</b></td><td align="left">id BIGINT</td></tr>
+    <tr><td align="left">UK</td><td align="left">nombre VARCHAR(20)</td></tr>
+    <tr><td></td><td align="left">fecha_inicio DATE · fecha_fin DATE</td></tr>
+    <tr><td></td><td align="left">hora_inicio_semana / hora_fin_semana TIME</td></tr>
+    <tr><td></td><td align="left">hora_inicio_sabado / hora_fin_sabado TIME</td></tr>
+    <tr><td></td><td align="left">almuerzo_inicio / almuerzo_fin TIME</td></tr>
+    <tr><td></td><td align="left">duracion_bloque_min SMALLINT</td></tr>
+    <tr><td></td><td align="left">max_sesiones_semana TINYINT</td></tr>
+    <tr><td></td><td align="left">cupo_maximo_base SMALLINT</td></tr>
+    <tr><td></td><td align="left">tolerancia_cupo_pct DECIMAL(5,2)</td></tr>
+    <tr><td></td><td align="left">cupo_minimo SMALLINT</td></tr>
+  </table>>];
+
+  curso [label=<
+  <table border="0" cellborder="1" cellspacing="0" cellpadding="3">
+    <tr><td bgcolor="#1f4e79" colspan="2"><font color="white"><b>curso</b></font></td></tr>
+    <tr><td align="left"><b>PK</b></td><td align="left">id BIGINT</td></tr>
+    <tr><td align="left">UK</td><td align="left">codigo VARCHAR(20) NULL (P)</td></tr>
+    <tr><td></td><td align="left">nombre VARCHAR(150)</td></tr>
+    <tr><td></td><td align="left">sesiones_semanales TINYINT</td></tr>
+    <tr><td></td><td align="left">duracion_sesion_min SMALLINT</td></tr>
+    <tr><td></td><td align="left">necesita_aula_especial BOOLEAN</td></tr>
+  </table>>];
+
+  docente [label=<
+  <table border="0" cellborder="1" cellspacing="0" cellpadding="3">
+    <tr><td bgcolor="#1f4e79" colspan="2"><font color="white"><b>docente</b></font></td></tr>
+    <tr><td align="left"><b>PK</b></td><td align="left">id BIGINT</td></tr>
+    <tr><td></td><td align="left">nombre VARCHAR(150)</td></tr>
+    <tr><td></td><td align="left">tipo_vinculacion VARCHAR(15)</td></tr>
+  </table>>];
+
+  docente_especialidad [label=<
+  <table border="0" cellborder="1" cellspacing="0" cellpadding="3" color="#888888">
+    <tr><td bgcolor="#9e9e9e" colspan="2"><font color="white"><b>docente_especialidad</b> (auxiliar)</font></td></tr>
+    <tr><td align="left"><b>PK, FK</b></td><td align="left">docente_id BIGINT</td></tr>
+    <tr><td align="left"><b>PK</b></td><td align="left">especialidad VARCHAR(100)</td></tr>
+  </table>>];
+
+  restriccion_horaria [label=<
+  <table border="0" cellborder="1" cellspacing="0" cellpadding="3">
+    <tr><td bgcolor="#1f4e79" colspan="2"><font color="white"><b>restriccion_horaria</b></font></td></tr>
+    <tr><td align="left"><b>PK</b></td><td align="left">id BIGINT</td></tr>
+    <tr><td align="left">FK</td><td align="left">docente_id BIGINT</td></tr>
+    <tr><td></td><td align="left">dia TINYINT (1=lun … 6=sáb)</td></tr>
+    <tr><td></td><td align="left">hora_inicio TIME · hora_fin TIME</td></tr>
+    <tr><td></td><td align="left">tipo VARCHAR(12) FIRME|PREFERENCIA</td></tr>
+    <tr><td></td><td align="left">sentido VARCHAR(15) (P)</td></tr>
+  </table>>];
+
+  grupo [label=<
+  <table border="0" cellborder="1" cellspacing="0" cellpadding="3">
+    <tr><td bgcolor="#2e75b6" colspan="2"><font color="white"><b>grupo</b></font></td></tr>
+    <tr><td align="left"><b>PK</b></td><td align="left">id BIGINT</td></tr>
+    <tr><td align="left">FK</td><td align="left">periodo_id BIGINT (P)</td></tr>
+    <tr><td align="left">FK</td><td align="left">curso_id BIGINT</td></tr>
+    <tr><td align="left">FK</td><td align="left">docente_id BIGINT</td></tr>
+    <tr><td align="left">UK*</td><td align="left">codigo VARCHAR(10) (P)</td></tr>
+    <tr><td></td><td align="left">cupo_maximo · cupo_minimo SMALLINT</td></tr>
+    <tr><td></td><td align="left">inscritos SMALLINT</td></tr>
+  </table>>];
+
+  horario [label=<
+  <table border="0" cellborder="1" cellspacing="0" cellpadding="3">
+    <tr><td bgcolor="#1f4e79" colspan="2"><font color="white"><b>horario</b></font></td></tr>
+    <tr><td align="left"><b>PK</b></td><td align="left">id BIGINT</td></tr>
+    <tr><td align="left">FK</td><td align="left">periodo_id BIGINT</td></tr>
+    <tr><td></td><td align="left">estado VARCHAR(10) BORRADOR|PUBLICADO</td></tr>
+    <tr><td></td><td align="left">fecha_creacion · fecha_publicacion (P)</td></tr>
+    <tr><td></td><td align="left">version INT (P)</td></tr>
+  </table>>];
+
+  sesion [label=<
+  <table border="0" cellborder="1" cellspacing="0" cellpadding="3">
+    <tr><td bgcolor="#1f4e79" colspan="2"><font color="white"><b>sesion</b></font></td></tr>
+    <tr><td align="left"><b>PK</b></td><td align="left">id BIGINT</td></tr>
+    <tr><td align="left">FK</td><td align="left">horario_id BIGINT</td></tr>
+    <tr><td align="left">FK</td><td align="left">grupo_id BIGINT</td></tr>
+    <tr><td></td><td align="left">dia TINYINT</td></tr>
+    <tr><td></td><td align="left">hora_inicio · hora_fin TIME (bloque)</td></tr>
+  </table>>];
+
+  { rank=same; periodo_academico; curso; docente; }
+  { rank=same; horario; grupo; restriccion_horaria; docente_especialidad; }
+
+  // dir=both: arrowtail en el origen (lado "uno"), arrowhead en el destino (lado "muchos")
+  periodo_academico -> horario  [arrowtail=teetee, arrowhead=crowtee, label="1 : 1..*"];
+  periodo_academico -> grupo    [arrowtail=teetee, arrowhead=crowodot, label="1 : 0..* (P)", style=dashed];
+  curso   -> grupo              [arrowtail=teetee, arrowhead=crowtee, label="1 : 1..*"];
+  docente -> grupo              [arrowtail=teetee, arrowhead=crowodot, label="1 : 0..*"];
+  docente -> restriccion_horaria [arrowtail=teetee, arrowhead=crowodot, label="1 : 0..*"];
+  docente -> docente_especialidad [arrowtail=teetee, arrowhead=crowodot, label="1 : 0..*", color="#888888"];
+  horario -> sesion             [arrowtail=teetee, arrowhead=crowtee, label="1 : 1..*"];
+  grupo   -> sesion             [arrowtail=teetee, arrowhead=crowtee, label="1 : 1..*"];
+}
