@@ -13,7 +13,7 @@ public class PeriodoAcademico {
     @Column(name="id")
     private Long id;
 
-    @Column(name="nombre", nullable=false, length=20)
+    @Column(name="nombre", nullable=false, unique=true, length=20)
     private String nombre;
 
     @Column(name="fecha_inicio", nullable=false)

@@ -1,0 +1,83 @@
+%% Modelo entidad-relación · Módulo de Asignación de Horarios Docente-Curso
+%% Siete entidades principales (Figura 4 del informe) + 1 estructura auxiliar.
+%% Cardinalidades conceptuales de la Figura 4. Ver ANALISIS_MODELO_BD.md §B
+%% para la opcionalidad física (qué impone MySQL y qué el backend).
+erDiagram
+    PERIODO_ACADEMICO ||--|{ HORARIO : "tiene"
+    PERIODO_ACADEMICO ||--o{ GRUPO : "programa (propuesta P1)"
+    CURSO ||--|{ GRUPO : "se ofrece en"
+    DOCENTE ||--o{ GRUPO : "dicta"
+    DOCENTE ||--o{ RESTRICCION_HORARIA : "registra"
+    DOCENTE ||--o{ DOCENTE_ESPECIALIDAD : "tiene (auxiliar)"
+    GRUPO ||--|{ SESION : "se dicta en"
+    HORARIO ||--|{ SESION : "contiene"
+
+    PERIODO_ACADEMICO {
+        BIGINT id PK
+        VARCHAR nombre UK "p. ej. 2026-2"
+        DATE fecha_inicio
+        DATE fecha_fin
+        TIME hora_inicio_semana "07:00"
+        TIME hora_fin_semana "22:00"
+        TIME hora_inicio_sabado "07:00"
+        TIME hora_fin_sabado "13:00"
+        TIME almuerzo_inicio "12:00"
+        TIME almuerzo_fin "13:00"
+        SMALLINT duracion_bloque_min "120"
+        TINYINT max_sesiones_semana "4"
+        SMALLINT cupo_maximo_base "40"
+        DECIMAL tolerancia_cupo_pct "10.00"
+        SMALLINT cupo_minimo "10"
+    }
+    DOCENTE {
+        BIGINT id PK
+        VARCHAR nombre
+        VARCHAR tipo_vinculacion "TC|TRES_CUARTOS|MEDIO_TIEMPO|CUARTO_TIEMPO"
+    }
+    DOCENTE_ESPECIALIDAD {
+        BIGINT docente_id PK,FK
+        VARCHAR especialidad PK
+    }
+    RESTRICCION_HORARIA {
+        BIGINT id PK
+        BIGINT docente_id FK
+        TINYINT dia "1=lun..6=sab"
+        TIME hora_inicio
+        TIME hora_fin
+        VARCHAR tipo "FIRME|PREFERENCIA"
+        VARCHAR sentido "DISPONIBLE|NO_DISPONIBLE (propuesta)"
+    }
+    CURSO {
+        BIGINT id PK
+        VARCHAR codigo UK "opcional (propuesta)"
+        VARCHAR nombre
+        TINYINT sesiones_semanales "1..max"
+        SMALLINT duracion_sesion_min "120"
+        BOOLEAN necesita_aula_especial
+    }
+    GRUPO {
+        BIGINT id PK
+        BIGINT periodo_id FK "propuesta P1"
+        BIGINT curso_id FK
+        BIGINT docente_id FK
+        VARCHAR codigo "UK con periodo y curso"
+        SMALLINT cupo_maximo
+        SMALLINT cupo_minimo
+        SMALLINT inscritos
+    }
+    HORARIO {
+        BIGINT id PK
+        BIGINT periodo_id FK
+        VARCHAR estado "BORRADOR|PUBLICADO"
+        DATETIME fecha_creacion
+        DATETIME fecha_publicacion
+        INT version
+    }
+    SESION {
+        BIGINT id PK
+        BIGINT horario_id FK
+        BIGINT grupo_id FK
+        TINYINT dia "1=lun..6=sab"
+        TIME hora_inicio "bloque"
+        TIME hora_fin "bloque"
+    }

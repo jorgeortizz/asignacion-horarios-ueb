@@ -1,0 +1,17 @@
+Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=JKS -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=36147 -Dhttp.nonProxyHosts=localhost|127.0.0.1|::1|127.*|0.*|::|169.254.*|api.anthropic.com|api-staging.anthropic.com|api-pr-preview.anthropic.com|mcp-proxy.anthropic.com|mcp-proxy-staging.anthropic.com|registry.npmjs.org|jsr.io|npm.jsr.io|pypi.org|files.pythonhosted.org|index.crates.io|proxy.golang.org|host.docker.internal|10.*|172.16.*|172.17.*|172.18.*|172.19.*|172.20.*|172.21.*|172.22.*|172.23.*|172.24.*|172.25.*|172.26.*|172.27.*|172.28.*|172.29.*|172.30.*|172.31.*|192.168.*|100.64.0.0/10|*.svc.cluster.local|*.svc.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+Flyway OSS Edition 13.10.3 by Redgate
+
+See release notes here: https://help.red-gate.com/help/flyway-cli13/help_10.aspx?topic=release-notes-and-older-versions/release-notes-for-flyway-engine
+Environment: default
+Database: jdbc:mysql:******** (MySQL 9.7)
+4 SQL migrations were detected but not run because they did not follow the filename convention.
+Set 'validateMigrationNaming' to true to fail fast and see a list of the invalid file names.
+WARNING: Using MySQL 9.7 which is newer than the version Flyway has been verified with. The latest verified version of MySQL is 9.4.
+Schema history table `horarios_ueb`.`flyway_schema_history` does not exist yet
+Successfully validated 2 migrations (execution time 00:00.016s)
+Creating Schema History table `horarios_ueb`.`flyway_schema_history` ...
+Current version of schema `horarios_ueb`: << Empty Schema >>
+Migrating schema `horarios_ueb` to version "1 - esquema inicial"
+Migrating schema `horarios_ueb` to version "2 - revision tecnica"
+WARNING: DB: PROCEDURE horarios_ueb.tmp_v2_precondiciones does not exist (SQL State:  - Error Code: 1305)
+Successfully applied 2 migrations to schema `horarios_ueb`, now at version v2 (execution time 00:00.255s)

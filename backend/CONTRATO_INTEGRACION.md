@@ -1,33 +1,65 @@
-# Contrato provisional Java ↔ SQL (pendiente de Claude)
+# Integracion Java / MySQL V2
 
-Esta implementación se basa en el `01_schema.sql` del ZIP original de Claude, **no** en su revisión aún no entregada. No se debe considerar cerrada la integración sin ejecutar `mvn clean test` y pruebas MySQL.
+La referencia oficial es [CONTRATO_JPA.md](../database/CONTRATO_JPA.md), complementada por
+[README_BD.md](../database/README_BD.md) y el [informe tecnico](../database/INFORME_REVISION_TECNICA.md).
 
-## Modelo
+## Mapeos y comportamiento
 
-| Entidad Java | Tabla SQL | Observaciones |
-|---|---|---|
-| `PeriodoAcademico` | `periodo_academico` | parámetros institucionales en columnas, no hardcodeados al operar |
-| `Docente` | `docente` | `tipo_vinculacion` enum STRING; especialidades en colección |
-| `RestriccionHoraria` | `restriccion_horaria` | `tipo` + `sentido`, interpretación provisional |
-| `Curso` | `curso` | frecuencia, duración y aula especial |
-| `Grupo` | `grupo` | `periodo_id` adicional propuesto por Claude, todavía sujeto a aprobación |
-| `Horario` | `horario` | `estado`, `fecha_creacion`, `fecha_publicacion`, `@Version` |
-| `Sesion` | `sesion` | FK a horario/grupo y `dia`, `hora_inicio`, `hora_fin` |
-| Colección `Docente.especialidades` | `docente_especialidad` | `@ElementCollection`, tabla auxiliar, no entidad principal |
+- Siete entidades y la coleccion `Docente.especialidades`; tablas, columnas y relaciones
+  obligatorias explicitas. No se agregan cascadas de borrado ni orphanRemoval.
+- Se mantienen los tipos publicos: `byte` para TINYINT y `short` para SMALLINT.
+  `dia` sigue siendo numerico, 1=lunes a 6=sabado, con validacion antes de persistir.
+  No se introduce DayOfWeek porque cambiaria sin necesidad la API existente.
+- Los cuatro enums conservan sus constantes exactas y se enlazan como JDBC VARCHAR.
+  `necesitaAulaEspecial` conserva boolean: Connector/J interpreta TINYINT(1) como BIT
+  con su configuracion predeterminada; no se fuerza TINYINT en ese campo.
+- `Horario.fechaCreacion` la genera la BD mediante CURRENT_TIMESTAMP. Hibernate recupera
+  el valor al insertar; la columna es no insertable y no actualizable.
+- `Horario.version` mantiene `@Version int`, equivalente a SQL INT. Se conservan los
+  bloqueos PESSIMISTIC_WRITE del horario y las transacciones de movimiento/publicacion.
+- Los metadatos incluyen las claves unicas de periodo, curso, grupo, restriccion y sesion.
+- Los errores BD-01 a BD-12 producen HTTP 409 con `codigo`, `error` y `estado`.
+  Los conflictos optimistas indican que se debe recargar. No se devuelve SQL al cliente.
 
-## Reglas Java
+## Consulta vigente
 
-Se reutilizan para generación y movimientos las revisiones de franja, almuerzo, choque de docente, disponibilidad y días consecutivos (esta última advertencia); se añaden bloque fijo y choque de grupo como defensas técnicas coherentes con las sesiones del proyecto. El cambio manual y la publicación requieren BORRADOR; el backend nunca edita un horario PUBLICADO. Esto es una **decisión conservadora provisional**: el Comité debe decidir la política de republicación.
+`GET /api/v1/periodos/{id}/horario-vigente` devuelve el HorarioDto del publicado vigente;
+responde 404 cuando no existe. La consulta nativa usa `v_horario_vigente`: mayor
+fecha_publicacion y, en empate, mayor id. El historial y las consultas por id conservan
+su comportamiento.
 
-**Datos de prueba H2** son desechables. **SQL original de Claude** incluye `DROP DATABASE`: jamás ejecutarlo en una base con datos valiosos. Se espera SQL actualizado sin operaciones destructivas de migración.
+## Perfiles y migraciones
 
-## Puntos por cerrar con Claude/Comité
+- `mysql`: `ddl-auto=none`, nombres fisicos estandar, Flyway habilitado y clean deshabilitado.
+  Se conservan las credenciales de aplicacion y migracion separadas del perfil existente.
+- `demo`: H2 temporal, `ddl-auto=create-drop` exclusivamente para H2 y Flyway deshabilitado.
+  `db/demo/vistas.sql` crea solo la vista equivalente despues de las tablas de Hibernate.
+- Spring Boot 4.1.1 gestiona las versiones de starter Flyway, flyway-mysql y Connector/J.
+  No se fijan versiones independientes.
+- En `db/migration` solo se incluyen las copias entregadas V1 y V2, sin modificarlas.
+  No se incorporan P1, P2 ni P3. Tampoco se cambia la politica de publicacion ni el bloqueo
+  preventivo de cambios temporales de parametros cuando ya existen sesiones.
 
-1. Confirmar las columnas finales de `restriccion_horaria`, `grupo`, `horario`, `sesion`.
-2. Verificar claves compuestas, índices, triggers y `@Version` con la versión MySQL instalada.
-3. Confirmar si editar un publicado será prohibido, versionado o republicado; el MVP adopta prohibición preventiva en Java.
-4. Confirmar cambios en parámetros con sesiones ya publicadas. Se bloquean preventivamente cambios de franja, almuerzo o duración cuando hay sesiones.
-5. Confirmar conservación histórica de docente asignado y restricciones por periodo.
-6. Las consultas `/sesiones` permiten filtrar por docente/curso; el filtro visual de casillas libres sin conflictos corresponde a la siguiente fase de interfaz.
-7. `@ElementCollection` usa carga EAGER por simplicidad del MVP (volumen pequeño); puede optimizarse después.
-8. El perfil MySQL debe **validar** contra scripts de Claude; nunca asumir que H2 asegura compatibilidad total.
+## Verificacion
+
+Ejecutar desde `backend`: `mvn clean test`. Las pruebas de aplicacion usan explicitamente
+el perfil demo, sin depender del perfil activo de la terminal.
+
+La prueba `MySqlV2IntegrationTests` queda omitida por defecto. Para ejecutarla sobre una
+BD V2 de pruebas ya preparada, configurar estas variables en PowerShell:
+
+```powershell
+$env:MYSQL_INTEGRATION = 'true'
+$env:MYSQL_TEST_URL = 'jdbc:mysql://127.0.0.1:3306/horarios_ueb_pruebas?sslMode=DISABLED'
+$env:MYSQL_TEST_USER = '<usuario>'
+$env:MYSQL_TEST_PASSWORD = '<clave>'
+mvn '-Dtest=MySqlV2IntegrationTests' test
+```
+
+Esta prueba fuerza `ddl-auto=validate`, deshabilita Flyway y solo consulta: verifica el
+arranque con los mapeos y la consulta nativa usando Connector/J. No prepara la BD.
+
+Pendiente con MySQL real: aplicar V1/V2 en una BD de pruebas con Flyway y su usuario DDL;
+verificar el esquema con validate; probar los triggers BD-01 a BD-12 mediante operaciones
+reales, los CHECK/collations exactos, el default de fecha con Connector/J y la concurrencia
+entre conexiones. H2 y las excepciones JDBC simuladas no prueban esas garantias del motor.

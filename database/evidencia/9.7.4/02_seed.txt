@@ -1,0 +1,12 @@
++----------------------+-------+
+| tabla                | filas |
++----------------------+-------+
+| periodo_academico    |     2 |
+| docente              |     6 |
+| docente_especialidad |     9 |
+| restriccion_horaria  |    12 |
+| curso                |     9 |
+| grupo                |    15 |
+| horario              |     2 |
+| sesion               |    32 |
++----------------------+-------+

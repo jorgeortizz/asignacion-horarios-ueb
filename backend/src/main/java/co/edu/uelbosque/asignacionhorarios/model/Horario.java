@@ -1,6 +1,11 @@
 package co.edu.uelbosque.asignacionhorarios.model;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.Generated;
+import org.hibernate.generator.EventType;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.time.*;
 import java.math.BigDecimal;
 import java.util.*;
@@ -14,14 +19,17 @@ public class Horario {
     private Long id;
 
     @ManyToOne(fetch=FetchType.LAZY, optional=false)
-        @JoinColumn(name="periodo_id", nullable=false)
+        @JoinColumn(name="periodo_id", nullable=false, foreignKey=@ForeignKey(name="fk_horario_periodo_academico"))
     private PeriodoAcademico periodo;
 
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
         @Column(name="estado", nullable=false, length=10)
     private EstadoHorario estado;
 
-    @Column(name="fecha_creacion", nullable=false)
+    @Generated(event=EventType.INSERT)
+    @ColumnDefault("CURRENT_TIMESTAMP")
+    @Column(name="fecha_creacion", nullable=false, insertable=false, updatable=false)
     private LocalDateTime fechaCreacion;
 
     @Column(name="fecha_publicacion")
@@ -53,6 +61,5 @@ public class Horario {
     @PrePersist
     void beforeInsert() {
         if (estado == null) estado = EstadoHorario.BORRADOR;
-        if (fechaCreacion == null) fechaCreacion = LocalDateTime.now();
     }
 }

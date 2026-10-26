@@ -1,0 +1,25 @@
++--------+------------------------------------------------------------------------------------------------------------------------+-------+---------+
+| codigo | comprobacion                                                                                                           | filas | bloquea |
++--------+------------------------------------------------------------------------------------------------------------------------+-------+---------+
+| P01    | Periodos cuya franja L-V es más corta que un bloque (rompería ck_periodo_academico_franja_bloque)                      |     0 |       0 |
+| P02    | Objetos que V2 crea y ya existen (V2 aplicada antes o creados a mano)                                                  |     0 |       0 |
+| P03    | Objetos de V1 que V2 reemplaza y deben existir (6 esperados)                                                           |     6 |       0 |
+| P04    | Valores enum no canónicos (minúsculas o variantes) que R09 rechazaría. Corrección: UPDATE ... SET col = UPPER(col)     |     1 |       1 |
+| P05    | Cursos con necesita_aula_especial distinto de 0 o 1 (rompería ck_curso_aula_especial)                                  |     1 |       1 |
+| I01    | Horarios PUBLICADOS sin sesiones (quedan como están; BD-12 solo actúa al publicar)                                     |     0 |       0 |
+| I02    | Sesiones en horarios PUBLICADOS (después de V2 quedan protegidas por BD-08)                                            |     8 |       0 |
+| I03    | Sesiones que hoy no cumplen la franja o el almuerzo de su periodo (se listarán en v_sesion_conflicto_parametros)       |     0 |       0 |
+| I04    | Filas por tabla antes de migrar (comparar con la verificación posterior)                                               |    88 |       0 |
++--------+------------------------------------------------------------------------------------------------------------------------+-------+---------+
++-----------------------------------+------------+
+| Table                             | Checksum   |
++-----------------------------------+------------+
+| horarios_ueb.periodo_academico    |  923626421 |
+| horarios_ueb.docente              | 2203029041 |
+| horarios_ueb.docente_especialidad | 3440726961 |
+| horarios_ueb.restriccion_horaria  | 2930740089 |
+| horarios_ueb.curso                |  121892484 |
+| horarios_ueb.grupo                | 1708415763 |
+| horarios_ueb.horario              | 1668304885 |
+| horarios_ueb.sesion               |  383354182 |
++-----------------------------------+------------+

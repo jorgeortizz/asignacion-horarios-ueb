@@ -11,6 +11,7 @@ public class HorarioController {
     public HorarioController(HorarioService servicio) {this.servicio=servicio;}
     @GetMapping("/horarios/{id}") public Respuestas.HorarioDto ver(@PathVariable Long id) {return servicio.detalle(id);}
     @GetMapping("/periodos/{id}/horarios") public List<Respuestas.HorarioDto> historico(@PathVariable Long id) {return servicio.historico(id);}
+    @GetMapping("/periodos/{id}/horario-vigente") public Respuestas.HorarioDto vigente(@PathVariable Long id) {return servicio.vigente(id);}
     @PostMapping("/horarios/{id}/publicar") public Respuestas.HorarioDto publicar(@PathVariable Long id) {return servicio.publicar(id);}
     @PutMapping("/horarios/{id}/sesiones/{sesionId}") public Respuestas.MovimientoResultado mover(
          @PathVariable Long id,@PathVariable Long sesionId,@Valid @RequestBody Peticiones.Movimiento movimiento) {

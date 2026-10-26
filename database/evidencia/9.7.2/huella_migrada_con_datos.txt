@@ -1,0 +1,177 @@
+### TABLE curso
+  CONSTRAINT `ck_curso_aula_especial` CHECK ((`necesita_aula_especial` in (0,1))),
+  CONSTRAINT `ck_curso_duracion` CHECK ((`duracion_sesion_min` between 30 and 240)),
+  CONSTRAINT `ck_curso_nombre` CHECK ((char_length(trim(`nombre`)) > 0)),
+  CONSTRAINT `ck_curso_sesiones` CHECK ((`sesiones_semanales` between 1 and 10))
+  KEY `idx_curso_aula_especial` (`necesita_aula_especial`),
+  KEY `idx_curso_nombre` (`nombre`),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_curso_codigo` (`codigo`),
+  `codigo` varchar(20) DEFAULT NULL COMMENT 'Código institucional del curso (propuesta, opcional)',
+  `duracion_sesion_min` smallint NOT NULL DEFAULT '120',
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `necesita_aula_especial` tinyint(1) NOT NULL DEFAULT '0',
+  `nombre` varchar(150) NOT NULL,
+  `sesiones_semanales` tinyint NOT NULL,
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Entidad Curso'
+CREATE TABLE `curso` (
+### TABLE docente
+  CONSTRAINT `ck_docente_nombre` CHECK ((char_length(trim(`nombre`)) > 0)),
+  CONSTRAINT `ck_docente_tipo_vinculacion` CHECK ((`tipo_vinculacion` in (_utf8mb4'TC',_utf8mb4'TRES_CUARTOS',_utf8mb4'MEDIO_TIEMPO',_utf8mb4'CUARTO_TIEMPO')))
+  KEY `idx_docente_nombre` (`nombre`),
+  PRIMARY KEY (`id`),
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `nombre` varchar(150) NOT NULL,
+  `tipo_vinculacion` varchar(15) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_bin NOT NULL,
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Entidad Docente'
+CREATE TABLE `docente` (
+### TABLE docente_especialidad
+  CONSTRAINT `ck_docente_especialidad_valor` CHECK ((char_length(trim(`especialidad`)) > 0))
+  CONSTRAINT `fk_docente_especialidad_docente` FOREIGN KEY (`docente_id`) REFERENCES `docente` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
+  PRIMARY KEY (`docente_id`,`especialidad`),
+  `docente_id` bigint NOT NULL,
+  `especialidad` varchar(100) NOT NULL,
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Auxiliar: especialidades del docente (colección de valores)'
+CREATE TABLE `docente_especialidad` (
+### TABLE grupo
+  CONSTRAINT `ck_grupo_codigo` CHECK ((char_length(trim(`codigo`)) > 0)),
+  CONSTRAINT `ck_grupo_cupo_maximo` CHECK ((`cupo_maximo` > 0)),
+  CONSTRAINT `ck_grupo_cupo_minimo` CHECK ((`cupo_minimo` >= 0)),
+  CONSTRAINT `ck_grupo_cupos` CHECK ((`cupo_minimo` <= `cupo_maximo`)),
+  CONSTRAINT `ck_grupo_inscritos` CHECK ((`inscritos` >= 0))
+  CONSTRAINT `fk_grupo_curso` FOREIGN KEY (`curso_id`) REFERENCES `curso` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `fk_grupo_docente` FOREIGN KEY (`docente_id`) REFERENCES `docente` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `fk_grupo_periodo_academico` FOREIGN KEY (`periodo_id`) REFERENCES `periodo_academico` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  KEY `idx_grupo_curso_periodo` (`curso_id`,`periodo_id`),
+  KEY `idx_grupo_docente_periodo` (`docente_id`,`periodo_id`),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_grupo_periodo_curso_codigo` (`periodo_id`,`curso_id`,`codigo`),
+  `codigo` varchar(10) NOT NULL COMMENT 'Propuesta: identificador del grupo dentro del curso',
+  `cupo_maximo` smallint NOT NULL,
+  `cupo_minimo` smallint NOT NULL,
+  `curso_id` bigint NOT NULL,
+  `docente_id` bigint NOT NULL,
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `inscritos` smallint NOT NULL DEFAULT '0',
+  `periodo_id` bigint NOT NULL COMMENT 'Propuesta: periodo al que pertenece el grupo',
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Entidad Grupo'
+CREATE TABLE `grupo` (
+### TABLE horario
+  CONSTRAINT `ck_horario_estado` CHECK ((`estado` in (_utf8mb4'BORRADOR',_utf8mb4'PUBLICADO'))),
+  CONSTRAINT `ck_horario_publicacion` CHECK (((`estado` = _utf8mb4'BORRADOR') or (`fecha_publicacion` is not null))),
+  CONSTRAINT `ck_horario_version` CHECK ((`version` >= 0))
+  CONSTRAINT `fk_horario_periodo_academico` FOREIGN KEY (`periodo_id`) REFERENCES `periodo_academico` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  KEY `idx_horario_periodo_estado` (`periodo_id`,`estado`),
+  PRIMARY KEY (`id`),
+  `estado` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_bin NOT NULL DEFAULT 'BORRADOR',
+  `fecha_creacion` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `fecha_publicacion` datetime DEFAULT NULL,
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `periodo_id` bigint NOT NULL,
+  `version` int NOT NULL DEFAULT '0',
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Entidad Horario'
+CREATE TABLE `horario` (
+### TABLE periodo_academico
+  CONSTRAINT `ck_periodo_academico_almuerzo` CHECK ((`almuerzo_fin` > `almuerzo_inicio`)),
+  CONSTRAINT `ck_periodo_academico_cupo_max` CHECK ((`cupo_maximo_base` > 0)),
+  CONSTRAINT `ck_periodo_academico_cupo_min` CHECK (((`cupo_minimo` >= 0) and (`cupo_minimo` <= `cupo_maximo_base`))),
+  CONSTRAINT `ck_periodo_academico_duracion` CHECK ((`duracion_bloque_min` between 30 and 240)),
+  CONSTRAINT `ck_periodo_academico_fechas` CHECK ((`fecha_fin` > `fecha_inicio`)),
+  CONSTRAINT `ck_periodo_academico_franja_bloque` CHECK ((time_to_sec(timediff(`hora_fin_semana`,`hora_inicio_semana`)) >= (`duracion_bloque_min` * 60))),
+  CONSTRAINT `ck_periodo_academico_franja_sab` CHECK ((`hora_fin_sabado` > `hora_inicio_sabado`)),
+  CONSTRAINT `ck_periodo_academico_franja_sem` CHECK ((`hora_fin_semana` > `hora_inicio_semana`)),
+  CONSTRAINT `ck_periodo_academico_max_ses` CHECK ((`max_sesiones_semana` between 1 and 10)),
+  CONSTRAINT `ck_periodo_academico_nombre` CHECK ((char_length(trim(`nombre`)) > 0)),
+  CONSTRAINT `ck_periodo_academico_tolerancia` CHECK ((`tolerancia_cupo_pct` between 0 and 100))
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_periodo_academico_nombre` (`nombre`),
+  `almuerzo_fin` time NOT NULL DEFAULT '13:00:00',
+  `almuerzo_inicio` time NOT NULL DEFAULT '12:00:00',
+  `cupo_maximo_base` smallint NOT NULL DEFAULT '40' COMMENT 'Valor inicial de grupo.cupo_maximo',
+  `cupo_minimo` smallint NOT NULL DEFAULT '10' COMMENT 'Valor inicial de grupo.cupo_minimo',
+  `duracion_bloque_min` smallint NOT NULL DEFAULT '120' COMMENT 'Duración del bloque fijo en minutos',
+  `fecha_fin` date NOT NULL,
+  `fecha_inicio` date NOT NULL,
+  `hora_fin_sabado` time NOT NULL DEFAULT '13:00:00',
+  `hora_fin_semana` time NOT NULL DEFAULT '22:00:00' COMMENT 'Fin de la franja de lunes a viernes',
+  `hora_inicio_sabado` time NOT NULL DEFAULT '07:00:00',
+  `hora_inicio_semana` time NOT NULL DEFAULT '07:00:00' COMMENT 'Inicio de la franja de lunes a viernes',
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `max_sesiones_semana` tinyint NOT NULL DEFAULT '4' COMMENT 'Máximo de sesiones semanales por curso',
+  `nombre` varchar(20) NOT NULL COMMENT 'Código del periodo, p. ej. 2026-2',
+  `tolerancia_cupo_pct` decimal(5,2) NOT NULL DEFAULT '10.00' COMMENT 'Tolerancia sobre el cupo máximo, en %',
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Entidad PeriodoAcademico: semestre y parámetros institucionales'
+CREATE TABLE `periodo_academico` (
+### TABLE restriccion_horaria
+  CONSTRAINT `ck_restriccion_horaria_dia` CHECK ((`dia` between 1 and 6)),
+  CONSTRAINT `ck_restriccion_horaria_horas` CHECK ((`hora_fin` > `hora_inicio`)),
+  CONSTRAINT `ck_restriccion_horaria_sentido` CHECK ((`sentido` in (_utf8mb4'DISPONIBLE',_utf8mb4'NO_DISPONIBLE'))),
+  CONSTRAINT `ck_restriccion_horaria_tipo` CHECK ((`tipo` in (_utf8mb4'FIRME',_utf8mb4'PREFERENCIA')))
+  CONSTRAINT `fk_restriccion_horaria_docente` FOREIGN KEY (`docente_id`) REFERENCES `docente` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
+  KEY `idx_restriccion_horaria_docente_dia` (`docente_id`,`dia`,`hora_inicio`),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_restriccion_horaria_franja` (`docente_id`,`dia`,`hora_inicio`,`hora_fin`,`tipo`,`sentido`),
+  `dia` tinyint NOT NULL COMMENT '1=lunes ... 6=sábado',
+  `docente_id` bigint NOT NULL,
+  `hora_fin` time NOT NULL,
+  `hora_inicio` time NOT NULL,
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `sentido` varchar(15) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_bin NOT NULL COMMENT 'DISPONIBLE | NO_DISPONIBLE (propuesta)',
+  `tipo` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_bin NOT NULL COMMENT 'FIRME | PREFERENCIA',
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Entidad RestriccionHoraria'
+CREATE TABLE `restriccion_horaria` (
+### TABLE sesion
+  CONSTRAINT `ck_sesion_dia` CHECK ((`dia` between 1 and 6)),
+  CONSTRAINT `ck_sesion_horas` CHECK ((`hora_fin` > `hora_inicio`))
+  CONSTRAINT `fk_sesion_grupo` FOREIGN KEY (`grupo_id`) REFERENCES `grupo` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `fk_sesion_horario` FOREIGN KEY (`horario_id`) REFERENCES `horario` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  KEY `idx_sesion_grupo_horario` (`grupo_id`,`horario_id`),
+  KEY `idx_sesion_horario_casilla` (`horario_id`,`dia`,`hora_inicio`),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_sesion_horario_grupo_casilla` (`horario_id`,`grupo_id`,`dia`,`hora_inicio`),
+  `dia` tinyint NOT NULL COMMENT '1=lunes ... 6=sábado',
+  `grupo_id` bigint NOT NULL,
+  `hora_fin` time NOT NULL,
+  `hora_inicio` time NOT NULL,
+  `horario_id` bigint NOT NULL,
+  `id` bigint NOT NULL AUTO_INCREMENT,
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Entidad Sesion'
+CREATE TABLE `sesion` (
+### VIEW v_bloque_valido
+with recursive `dias` (`dia`) as (select 1 AS `1` union all select (`dias`.`dia` + 1) AS `dia + 1` from `dias` where (`dias`.`dia` < 6)), `bloques` (`periodo_id`,`dia`,`hora_inicio`,`hora_fin`,`franja_fin`,`alm_ini`,`alm_fin`,`dur_seg`) as (select `p`.`id` AS `id`,`d`.`dia` AS `dia`,if((`d`.`dia` = 6),`p`.`hora_inicio_sabado`,`p`.`hora_inicio_semana`) AS `IF(d.dia = 6, p.hora_inicio_sabado, p.hora_inicio_semana)`,addtime(if((`d`.`dia` = 6),`p`.`hora_inicio_sabado`,`p`.`hora_inicio_semana`),sec_to_time((`p`.`duracion_bloque_min` * 60))) AS `ADDTIME(IF(d.dia = 6, p.hora_inicio_sabado, p.hora_inicio_semana),\n                   SEC_TO_TIME(p.duracion_bloque_min * 60))`,if((`d`.`dia` = 6),`p`.`hora_fin_sabado`,`p`.`hora_fin_semana`) AS `IF(d.dia = 6, p.hora_fin_sabado, p.hora_fin_semana)`,`p`.`almuerzo_inicio` AS `almuerzo_inicio`,`p`.`almuerzo_fin` AS `almuerzo_fin`,(`p`.`duracion_bloque_min` * 60) AS `p.duracion_bloque_min * 60` from (`horarios_ueb`.`periodo_academico` `p` join `dias` `d`) union all select `bloques`.`periodo_id` AS `periodo_id`,`bloques`.`dia` AS `dia`,`bloques`.`hora_fin` AS `hora_fin`,addtime(`bloques`.`hora_fin`,sec_to_time(`bloques`.`dur_seg`)) AS `ADDTIME(hora_fin, SEC_TO_TIME(dur_seg))`,`bloques`.`franja_fin` AS `franja_fin`,`bloques`.`alm_ini` AS `alm_ini`,`bloques`.`alm_fin` AS `alm_fin`,`bloques`.`dur_seg` AS `dur_seg` from `bloques` where (addtime(`bloques`.`hora_fin`,sec_to_time(`bloques`.`dur_seg`)) <= `bloques`.`franja_fin`)) select `bloques`.`periodo_id` AS `periodo_id`,`bloques`.`dia` AS `dia`,`bloques`.`hora_inicio` AS `hora_inicio`,`bloques`.`hora_fin` AS `hora_fin` from `bloques` where ((`bloques`.`hora_fin` <= `bloques`.`franja_fin`) and ((`bloques`.`hora_inicio` >= `bloques`.`alm_fin`) or (`bloques`.`hora_fin` <= `bloques`.`alm_ini`)))
+### VIEW v_grupo_cupo
+select `g`.`id` AS `grupo_id`,`g`.`periodo_id` AS `periodo_id`,`p`.`nombre` AS `periodo`,`g`.`curso_id` AS `curso_id`,`c`.`nombre` AS `curso`,`g`.`codigo` AS `grupo`,`g`.`docente_id` AS `docente_id`,`d`.`nombre` AS `docente`,`g`.`cupo_maximo` AS `cupo_maximo`,`p`.`tolerancia_cupo_pct` AS `tolerancia_cupo_pct`,floor((`g`.`cupo_maximo` * (1 + (`p`.`tolerancia_cupo_pct` / 100)))) AS `limite_operativo`,`g`.`cupo_minimo` AS `cupo_minimo`,`g`.`inscritos` AS `inscritos`,(`g`.`inscritos` < `g`.`cupo_minimo`) AS `candidato_cierre`,(`g`.`inscritos` > floor((`g`.`cupo_maximo` * (1 + (`p`.`tolerancia_cupo_pct` / 100))))) AS `excede_limite` from (((`horarios_ueb`.`grupo` `g` join `horarios_ueb`.`periodo_academico` `p` on((`p`.`id` = `g`.`periodo_id`))) join `horarios_ueb`.`curso` `c` on((`c`.`id` = `g`.`curso_id`))) join `horarios_ueb`.`docente` `d` on((`d`.`id` = `g`.`docente_id`)))
+### VIEW v_horario_vigente
+select `h`.`periodo_id` AS `periodo_id`,`p`.`nombre` AS `periodo`,`h`.`id` AS `horario_id`,`h`.`fecha_publicacion` AS `fecha_publicacion` from (`horarios_ueb`.`horario` `h` join `horarios_ueb`.`periodo_academico` `p` on((`p`.`id` = `h`.`periodo_id`))) where ((`h`.`estado` = 'PUBLICADO') and (not exists(select 1 from `horarios_ueb`.`horario` `h2` where ((`h2`.`periodo_id` = `h`.`periodo_id`) and (`h2`.`estado` = 'PUBLICADO') and ((`h2`.`fecha_publicacion` > `h`.`fecha_publicacion`) or ((`h2`.`fecha_publicacion` = `h`.`fecha_publicacion`) and (`h2`.`id` > `h`.`id`)))))))
+### VIEW v_sesion_conflicto_parametros
+select `s`.`id` AS `sesion_id`,`s`.`horario_id` AS `horario_id`,`h`.`estado` AS `estado_horario`,`h`.`periodo_id` AS `periodo_id`,`s`.`grupo_id` AS `grupo_id`,`s`.`dia` AS `dia`,`s`.`hora_inicio` AS `hora_inicio`,`s`.`hora_fin` AS `hora_fin`,'FRANJA' AS `motivo` from ((`horarios_ueb`.`sesion` `s` join `horarios_ueb`.`horario` `h` on((`h`.`id` = `s`.`horario_id`))) join `horarios_ueb`.`periodo_academico` `p` on((`p`.`id` = `h`.`periodo_id`))) where ((`s`.`hora_inicio` < if((`s`.`dia` = 6),`p`.`hora_inicio_sabado`,`p`.`hora_inicio_semana`)) or (`s`.`hora_fin` > if((`s`.`dia` = 6),`p`.`hora_fin_sabado`,`p`.`hora_fin_semana`))) union all select `s`.`id` AS `id`,`s`.`horario_id` AS `horario_id`,`h`.`estado` AS `estado`,`h`.`periodo_id` AS `periodo_id`,`s`.`grupo_id` AS `grupo_id`,`s`.`dia` AS `dia`,`s`.`hora_inicio` AS `hora_inicio`,`s`.`hora_fin` AS `hora_fin`,'ALMUERZO' AS `ALMUERZO` from ((`horarios_ueb`.`sesion` `s` join `horarios_ueb`.`horario` `h` on((`h`.`id` = `s`.`horario_id`))) join `horarios_ueb`.`periodo_academico` `p` on((`p`.`id` = `h`.`periodo_id`))) where ((`s`.`hora_inicio` < `p`.`almuerzo_fin`) and (`s`.`hora_fin` > `p`.`almuerzo_inicio`)) union all select `s`.`id` AS `id`,`s`.`horario_id` AS `horario_id`,`h`.`estado` AS `estado`,`h`.`periodo_id` AS `periodo_id`,`s`.`grupo_id` AS `grupo_id`,`s`.`dia` AS `dia`,`s`.`hora_inicio` AS `hora_inicio`,`s`.`hora_fin` AS `hora_fin`,'CUADRICULA' AS `CUADRICULA` from (`horarios_ueb`.`sesion` `s` join `horarios_ueb`.`horario` `h` on((`h`.`id` = `s`.`horario_id`))) where (not exists(select 1 from `horarios_ueb`.`v_bloque_valido` `b` where ((`horarios_ueb`.`b`.`periodo_id` = `h`.`periodo_id`) and (`horarios_ueb`.`b`.`dia` = `s`.`dia`) and (`horarios_ueb`.`b`.`hora_inicio` = `s`.`hora_inicio`) and (`horarios_ueb`.`b`.`hora_fin` = `s`.`hora_fin`)))) union all select `s`.`id` AS `id`,`s`.`horario_id` AS `horario_id`,`h`.`estado` AS `estado`,`h`.`periodo_id` AS `periodo_id`,`s`.`grupo_id` AS `grupo_id`,`s`.`dia` AS `dia`,`s`.`hora_inicio` AS `hora_inicio`,`s`.`hora_fin` AS `hora_fin`,'DURACION_BLOQUE' AS `DURACION_BLOQUE` from ((((`horarios_ueb`.`sesion` `s` join `horarios_ueb`.`horario` `h` on((`h`.`id` = `s`.`horario_id`))) join `horarios_ueb`.`periodo_academico` `p` on((`p`.`id` = `h`.`periodo_id`))) join `horarios_ueb`.`grupo` `g` on((`g`.`id` = `s`.`grupo_id`))) join `horarios_ueb`.`curso` `c` on((`c`.`id` = `g`.`curso_id`))) where (`c`.`duracion_sesion_min` <> `p`.`duracion_bloque_min`)
+### VIEW v_sesion_detalle
+select `s`.`id` AS `sesion_id`,`h`.`id` AS `horario_id`,`h`.`estado` AS `estado_horario`,`p`.`id` AS `periodo_id`,`p`.`nombre` AS `periodo`,`s`.`dia` AS `dia`,elt(`s`.`dia`,'Lunes','Martes','Miércoles','Jueves','Viernes','Sábado') AS `dia_nombre`,`s`.`hora_inicio` AS `hora_inicio`,`s`.`hora_fin` AS `hora_fin`,`g`.`id` AS `grupo_id`,`g`.`codigo` AS `grupo`,`c`.`id` AS `curso_id`,`c`.`codigo` AS `curso_codigo`,`c`.`nombre` AS `curso`,`c`.`necesita_aula_especial` AS `necesita_aula_especial`,`d`.`id` AS `docente_id`,`d`.`nombre` AS `docente` from (((((`horarios_ueb`.`sesion` `s` join `horarios_ueb`.`horario` `h` on((`h`.`id` = `s`.`horario_id`))) join `horarios_ueb`.`periodo_academico` `p` on((`p`.`id` = `h`.`periodo_id`))) join `horarios_ueb`.`grupo` `g` on((`g`.`id` = `s`.`grupo_id`))) join `horarios_ueb`.`curso` `c` on((`c`.`id` = `g`.`curso_id`))) join `horarios_ueb`.`docente` `d` on((`d`.`id` = `g`.`docente_id`)))
+### ROUTINE sp_validar_sesion
+BEGIN\n  DECLARE v_periodo_horario BIGINT;\n  DECLARE v_periodo_grupo   BIGINT;\n  DECLARE v_duracion_min    SMALLINT;\n  DECLARE v_franja_ini      TIME;\n  DECLARE v_franja_fin      TIME;\n  DECLARE v_alm_ini         TIME;\n  DECLARE v_alm_fin         TIME;\n\n  SELECT periodo_id INTO v_periodo_horario FROM horario WHERE id = p_horario_id;\n\n  SELECT g.periodo_id, c.duracion_sesion_min\n    INTO v_periodo_grupo, v_duracion_min\n    FROM grupo g JOIN curso c ON c.id = g.curso_id\n   WHERE g.id = p_grupo_id;\n\n  -- Si el horario o el grupo no existen, se deja actuar a la clave foránea\n  -- (error 1452), que es el mensaje correcto para ese caso.\n  IF v_periodo_horario IS NOT NULL AND v_periodo_grupo IS NOT NULL THEN\n\n    IF v_periodo_horario <> v_periodo_grupo THEN\n      SIGNAL SQLSTATE '45000'\n        SET MESSAGE_TEXT = '[BD-01] La sesión une un grupo y un horario de periodos académicos distintos.';\n    END IF;\n\n    IF TIME_TO_SEC(TIMEDIFF(p_hora_fin, p_hora_inicio)) <> v_duracion_min * 60 THEN\n      SIGNAL SQLSTATE '45000'\n        SET MESSAGE_TEXT = '[BD-02] La duración de la sesión no coincide con la duración del curso.';\n    END IF;\n\n    SELECT IF(p_dia = 6, hora_inicio_sabado, hora_inicio_semana),\n           IF(p_dia = 6, hora_fin_sabado,    hora_fin_semana),\n           almuerzo_inicio, almuerzo_fin\n      INTO v_franja_ini, v_franja_fin, v_alm_ini, v_alm_fin\n      FROM periodo_academico\n     WHERE id = v_periodo_horario;\n\n    IF p_hora_inicio < v_franja_ini OR p_hora_fin > v_franja_fin THEN\n      SIGNAL SQLSTATE '45000'\n        SET MESSAGE_TEXT = '[BD-03] La sesión excede la franja horaria institucional del periodo.';\n    END IF;\n\n    IF p_hora_inicio < v_alm_fin AND p_hora_fin > v_alm_ini THEN\n      SIGNAL SQLSTATE '45000'\n        SET MESSAGE_TEXT = '[BD-04] La sesión se solapa con el bloqueo de almuerzo.';\n    END IF;\n\n  END IF;\nEND
+### ROUTINE sp_verificar_horario_editable
+BEGIN\n  IF EXISTS (SELECT 1 FROM horario WHERE id = p_horario_id AND estado = 'PUBLICADO') THEN\n    SIGNAL SQLSTATE '45000'\n      SET MESSAGE_TEXT = '[BD-08] Horario PUBLICADO: sus sesiones no se insertan, modifican ni eliminan; use el flujo de republicación.';\n  END IF;\nEND
+### TRIGGER trg_curso_bu
+BEFORE UPDATE ON curso
+BEGIN\n  IF NEW.duracion_sesion_min <> OLD.duracion_sesion_min\n     AND EXISTS (SELECT 1 FROM sesion s JOIN grupo g ON g.id = s.grupo_id WHERE g.curso_id = OLD.id) THEN\n    SIGNAL SQLSTATE '45000'\n      SET MESSAGE_TEXT = '[BD-09] No se puede cambiar la duración de un curso que ya tiene sesiones programadas.';\n  END IF;\nEND
+### TRIGGER trg_grupo_bu
+BEFORE UPDATE ON grupo
+BEGIN\n  IF NEW.periodo_id <> OLD.periodo_id\n     AND EXISTS (SELECT 1 FROM sesion WHERE grupo_id = OLD.id) THEN\n    SIGNAL SQLSTATE '45000'\n      SET MESSAGE_TEXT = '[BD-05] No se puede cambiar el periodo de un grupo que ya tiene sesiones.';\n  END IF;\n  IF NEW.curso_id <> OLD.curso_id\n     AND EXISTS (SELECT 1 FROM sesion WHERE grupo_id = OLD.id) THEN\n    SIGNAL SQLSTATE '45000'\n      SET MESSAGE_TEXT = '[BD-10] No se puede cambiar el curso de un grupo que ya tiene sesiones.';\n  END IF;\nEND
+### TRIGGER trg_horario_bd
+BEFORE DELETE ON horario
+BEGIN\n  IF OLD.estado = 'PUBLICADO' THEN\n    SIGNAL SQLSTATE '45000'\n      SET MESSAGE_TEXT = '[BD-07] Un horario publicado no puede eliminarse; forma parte del historial.';\n  END IF;\nEND
+### TRIGGER trg_horario_bi
+BEFORE INSERT ON horario
+BEGIN\n  IF NEW.estado = 'PUBLICADO' THEN\n    SIGNAL SQLSTATE '45000'\n      SET MESSAGE_TEXT = '[BD-11] Un horario se crea en BORRADOR; publicarlo es una acción posterior del Comité.';\n  END IF;\nEND
+### TRIGGER trg_horario_bu
+BEFORE UPDATE ON horario
+BEGIN\n  IF NEW.periodo_id <> OLD.periodo_id\n     AND EXISTS (SELECT 1 FROM sesion WHERE horario_id = OLD.id) THEN\n    SIGNAL SQLSTATE '45000'\n      SET MESSAGE_TEXT = '[BD-06] No se puede cambiar el periodo de un horario que ya tiene sesiones.';\n  END IF;\n  IF NEW.estado = 'PUBLICADO' AND OLD.estado <> 'PUBLICADO'\n     AND NOT EXISTS (SELECT 1 FROM sesion WHERE horario_id = OLD.id) THEN\n    SIGNAL SQLSTATE '45000'\n      SET MESSAGE_TEXT = '[BD-12] No se puede publicar un horario sin sesiones.';\n  END IF;\nEND
+### TRIGGER trg_sesion_bd
+BEFORE DELETE ON sesion
+BEGIN\n  CALL sp_verificar_horario_editable(OLD.horario_id);\nEND
+### TRIGGER trg_sesion_bi
+BEFORE INSERT ON sesion
+BEGIN\n  CALL sp_verificar_horario_editable(NEW.horario_id);\n  CALL sp_validar_sesion(NEW.horario_id, NEW.grupo_id, NEW.dia, NEW.hora_inicio, NEW.hora_fin);\nEND
+### TRIGGER trg_sesion_bu
+BEFORE UPDATE ON sesion
+BEGIN\n  CALL sp_verificar_horario_editable(OLD.horario_id);\n  IF NEW.horario_id <> OLD.horario_id THEN\n    CALL sp_verificar_horario_editable(NEW.horario_id);\n  END IF;\n  CALL sp_validar_sesion(NEW.horario_id, NEW.grupo_id, NEW.dia, NEW.hora_inicio, NEW.hora_fin);\nEND

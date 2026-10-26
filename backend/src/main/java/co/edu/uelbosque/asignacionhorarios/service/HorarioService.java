@@ -64,6 +64,10 @@ public class HorarioService {
         var datos=sesiones.findByHorarioIdOrderByDiaAscHoraInicioAsc(id).stream().map(Respuestas.SesionDto::de).toList();
         return new Respuestas.HorarioDto(h.getId(),h.getPeriodo().getId(),h.getEstado(),h.getFechaCreacion(),h.getFechaPublicacion(),datos);
     }
+    @Transactional(readOnly=true) public Respuestas.HorarioDto vigente(Long periodoId) {
+        var h=Util.requerido(horarios.findVigenteByPeriodoId(periodoId),"Horario publicado vigente");
+        return detalle(h.getId());
+    }
     @Transactional(readOnly=true) public List<Respuestas.HorarioDto> historico(Long periodoId) {
         return horarios.findByPeriodoIdOrderByFechaCreacionDesc(periodoId).stream().map(h->detalle(h.getId())).toList();
     }

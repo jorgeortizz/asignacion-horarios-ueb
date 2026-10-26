@@ -1,0 +1,8 @@
+horarios_ueb.periodo_academico	923626421
+horarios_ueb.docente	1202589871
+horarios_ueb.docente_especialidad	547379013
+horarios_ueb.restriccion_horaria	2930740089
+horarios_ueb.curso	2234015969
+horarios_ueb.grupo	884101549
+horarios_ueb.horario	321505729
+horarios_ueb.sesion	4137631380

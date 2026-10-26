@@ -1,0 +1,58 @@
+-- Permisos propuestos para el ajuste controlado de almuerzo. SOLO REVISIÓN.
+-- Todas las sentencias de este archivo están COMENTADAS: no concede ni revoca
+-- permisos, no crea usuarios y no cambia la configuración del servidor.
+--
+-- Cuenta ya comprobada: 'horarios_migra'@'127.0.0.1'. Actualmente tiene
+-- ALL PRIVILEGES ON horarios_ueb.*; puede preparar y operar sin nuevos GRANT.
+-- No ampliar ni revocar esos permisos como parte de este ajuste.
+-- La siguiente lista describe el mínimo para una cuenta operadora restringida
+-- ya existente, usando ese mismo nombre únicamente como referencia de GRANT.
+--
+-- Comprobaciones previas (lectura), fuera de cualquier transacción pendiente:
+-- SELECT CURRENT_USER(), USER(), CONNECTION_ID();
+-- SHOW GRANTS FOR 'horarios_migra'@'127.0.0.1';
+--
+-- 1. Lectura de las ocho tablas para estados, instantáneas, bloqueos compartidos
+--    y validaciones. Los helpers SQL SECURITY INVOKER usan estas tablas directamente.
+-- GRANT SELECT ON horarios_ueb.periodo_academico TO 'horarios_migra'@'127.0.0.1';
+-- GRANT SELECT ON horarios_ueb.horario TO 'horarios_migra'@'127.0.0.1';
+-- GRANT SELECT ON horarios_ueb.sesion TO 'horarios_migra'@'127.0.0.1';
+-- GRANT SELECT ON horarios_ueb.grupo TO 'horarios_migra'@'127.0.0.1';
+-- GRANT SELECT ON horarios_ueb.curso TO 'horarios_migra'@'127.0.0.1';
+-- GRANT SELECT ON horarios_ueb.docente TO 'horarios_migra'@'127.0.0.1';
+-- GRANT SELECT ON horarios_ueb.docente_especialidad TO 'horarios_migra'@'127.0.0.1';
+-- GRANT SELECT ON horarios_ueb.restriccion_horaria TO 'horarios_migra'@'127.0.0.1';
+--
+-- 2. Escritura exclusivamente de las cuatro columnas que cambia el plan.
+--    No se necesita UPDATE sobre horario, grupo, curso o docente: sus lecturas
+--    de protección son FOR SHARE. FOR UPDATE se limita a las tablas editables.
+-- GRANT UPDATE (hora_inicio, hora_fin) ON horarios_ueb.sesion
+--   TO 'horarios_migra'@'127.0.0.1';
+-- GRANT UPDATE (almuerzo_inicio, almuerzo_fin) ON horarios_ueb.periodo_academico
+--   TO 'horarios_migra'@'127.0.0.1';
+--
+-- 3. Ejecución de las cuatro rutinas de control, incluidos los dos helpers
+--    internos: INVOKER no eleva privilegios al anidar sus llamadas.
+-- GRANT EXECUTE ON PROCEDURE horarios_ueb.sp_almuerzo_2026_2_aplicar
+--   TO 'horarios_migra'@'127.0.0.1';
+-- GRANT EXECUTE ON PROCEDURE horarios_ueb.sp_almuerzo_2026_2_confirmar
+--   TO 'horarios_migra'@'127.0.0.1';
+-- GRANT EXECUTE ON PROCEDURE horarios_ueb.sp_almuerzo_2026_2_huellas
+--   TO 'horarios_migra'@'127.0.0.1';
+-- GRANT EXECUTE ON PROCEDURE horarios_ueb.sp_almuerzo_2026_2_verificar
+--   TO 'horarios_migra'@'127.0.0.1';
+--
+-- 4. SOLO para quien instale preparar_control_almuerzo_2026_2.sql, antes de la
+--    transacción operativa: CREATE ROUTINE en el esquema. Una cuenta que solo
+--    aplique/confirme necesita los permisos 1-3, no CREATE ROUTINE.
+-- GRANT CREATE ROUTINE ON horarios_ueb.* TO 'horarios_migra'@'127.0.0.1';
+-- El servidor puede conceder automáticamente EXECUTE/ALTER ROUTINE al creador
+-- según automatic_sp_privileges. Revisar SHOW GRANTS; este plan no solicita
+-- ALTER ROUTINE, reemplazo o eliminación de objetos, ni cambia esa variable.
+--
+-- No hacen falta INSERT, DELETE, TRIGGER, ALTER TABLE, DROP, LOCK TABLES,
+-- GRANT OPTION ni privilegios globales. START TRANSACTION, SAVEPOINT, COMMIT
+-- y ROLLBACK no requieren un privilegio adicional específico.
+-- Los triggers y procedimientos originales conservan sus definidores vigentes;
+-- sus llamadas automáticas no requieren otorgar TRIGGER al operador.
+-- Este archivo NO autoriza V3: sus permisos DDL se revisan por separado.
