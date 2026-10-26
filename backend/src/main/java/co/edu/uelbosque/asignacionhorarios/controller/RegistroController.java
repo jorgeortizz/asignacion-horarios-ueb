@@ -24,11 +24,21 @@ public class RegistroController {
     @PostMapping("/cursos") public ResponseEntity<Map<String,Object>> curso(@Valid @RequestBody Peticiones.Curso p) {
         var c=registros.crearCurso(p);return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("id",c.getId(),"nombre",c.getNombre()));
     }
-    @GetMapping("/cursos") public List<Map<String,Object>> cursos() {
-        return registros.cursos().stream().map(c->Map.<String,Object>of("id",c.getId(),"nombre",c.getNombre(),
-          "sesionesSemanales",c.getSesionesSemanales(),"duracionSesionMin",c.getDuracionSesionMin(),
-          "necesitaAulaEspecial",c.isNecesitaAulaEspecial())).toList();
-    }
+   @GetMapping("/cursos")
+public List<Map<String, Object>> cursos() {
+    return registros.cursos().stream().map(c -> {
+        Map<String, Object> datos = new LinkedHashMap<>();
+
+        datos.put("id", c.getId());
+        datos.put("codigo", c.getCodigo());
+        datos.put("nombre", c.getNombre());
+        datos.put("sesionesSemanales", c.getSesionesSemanales());
+        datos.put("duracionSesionMin", c.getDuracionSesionMin());
+        datos.put("necesitaAulaEspecial", c.isNecesitaAulaEspecial());
+
+        return datos;
+    }).toList();
+}
     @PostMapping("/grupos") public ResponseEntity<Respuestas.GrupoDto> grupo(@Valid @RequestBody Peticiones.Grupo p) {
         return ResponseEntity.status(HttpStatus.CREATED).body(registros.crearGrupo(p));
     }
