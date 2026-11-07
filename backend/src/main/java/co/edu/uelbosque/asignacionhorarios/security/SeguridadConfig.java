@@ -74,9 +74,14 @@ public class SeguridadConfig {
                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/auth/me").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/logout").authenticated()
-                // La publicación nunca queda abierta a Coordinación.
+                // Consultas separadas: solo horarios publicados vigentes, incluso anónimamente.
+                .requestMatchers(HttpMethod.GET, "/api/v1/publico/**").permitAll()
+                // DOCENTE solo consulta su propia identidad académica desde la sesión.
+                .requestMatchers(HttpMethod.GET, "/api/v1/docentes/me/horario-publicado").hasRole("DOCENTE")
+                // Únicamente el Comité puede crear cuentas y publicar horarios.
+                .requestMatchers(HttpMethod.POST, "/api/v1/usuarios").hasRole("COMITE_TACTICO")
                 .requestMatchers(HttpMethod.POST, "/api/v1/horarios/*/publicar").hasRole("COMITE_TACTICO")
-                // Protección temporal restrictiva hasta los endpoints públicos/propios de Etapa 4.
+                // API administrativa existente: todo borrador, historial y CSV interno queda restringido.
                 .requestMatchers("/api/v1/**").hasAnyRole("COMITE_TACTICO", "COORDINACION_ACADEMICA")
                 .anyRequest().denyAll());
         return http.build();
