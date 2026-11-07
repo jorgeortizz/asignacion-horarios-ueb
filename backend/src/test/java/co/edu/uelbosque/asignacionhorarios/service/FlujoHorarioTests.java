@@ -22,99 +22,110 @@ import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Flujos de negocio con persistencia H2 real; cada prueba revierte sus datos. */
+/**
+ * Flujos de negocio con persistencia H2 real; cada prueba revierte sus datos.
+ */
 @SpringBootTest
 @ActiveProfiles("demo")
 @Transactional
 class FlujoHorarioTests {
-    @Autowired private PeriodoService periodos;
-    @Autowired private RegistroService registro;
-    @Autowired private GeneracionService generacion;
-    @Autowired private HorarioService horarios;
-    @Autowired private ConsultaService consultas;
-    @Autowired private SesionRepository sesiones;
-    @Autowired private EntityManager entityManager;
+    @Autowired
+    private PeriodoService periodos;
+    @Autowired
+    private RegistroService registro;
+    @Autowired
+    private GeneracionService generacion;
+    @Autowired
+    private HorarioService horarios;
+    @Autowired
+    private ConsultaService consultas;
+    @Autowired
+    private SesionRepository sesiones;
+    @Autowired
+    private EntityManager entityManager;
+    @Autowired
+    private HabilitacionDocenteService habilitaciones;
 
     @Test
     void nuevosPeriodosConservanJornadaYDuracionConAlmuerzoDeTreceACatorce() {
-        var p=periodos.crear(new Peticiones.Periodo("Almuerzo nuevo",
-            LocalDate.of(2030,1,15),LocalDate.of(2030,6,15)));
+        var p = periodos.crear(new Peticiones.Periodo("Almuerzo nuevo",
+                LocalDate.of(2030, 1, 15), LocalDate.of(2030, 6, 15)));
         persistirYRecargar();
-        var guardado=periodos.obtener(p.getId());
-        assertEquals(LocalTime.of(13,0),guardado.getAlmuerzoInicio());
-        assertEquals(LocalTime.of(14,0),guardado.getAlmuerzoFin());
-        assertEquals(LocalTime.of(7,0),guardado.getHoraInicioSemana());
-        assertEquals(LocalTime.of(22,0),guardado.getHoraFinSemana());
-        assertEquals(LocalTime.of(7,0),guardado.getHoraInicioSabado());
-        assertEquals(LocalTime.of(13,0),guardado.getHoraFinSabado());
-        assertEquals(120,guardado.getDuracionBloqueMin());
+        var guardado = periodos.obtener(p.getId());
+        assertEquals(LocalTime.of(13, 0), guardado.getAlmuerzoInicio());
+        assertEquals(LocalTime.of(14, 0), guardado.getAlmuerzoFin());
+        assertEquals(LocalTime.of(7, 0), guardado.getHoraInicioSemana());
+        assertEquals(LocalTime.of(22, 0), guardado.getHoraFinSemana());
+        assertEquals(LocalTime.of(7, 0), guardado.getHoraInicioSabado());
+        assertEquals(LocalTime.of(13, 0), guardado.getHoraFinSabado());
+        assertEquals(120, guardado.getDuracionBloqueMin());
     }
 
     @Test
     void generaHastaLasTreceIncluidoSabadoYExcluyeElAlmuerzoSinReanclarBloques() {
-        Datos datos=registrar(4,List.of(
-            new Peticiones.Restriccion((byte)1,LocalTime.of(11,0),LocalTime.of(15,0),
-                TipoRestriccion.FIRME,SentidoRestriccion.DISPONIBLE),
-            new Peticiones.Restriccion((byte)2,LocalTime.of(13,0),LocalTime.of(15,0),
-                TipoRestriccion.FIRME,SentidoRestriccion.DISPONIBLE),
-            new Peticiones.Restriccion((byte)5,LocalTime.of(19,0),LocalTime.of(22,0),
-                TipoRestriccion.FIRME,SentidoRestriccion.DISPONIBLE),
-            new Peticiones.Restriccion((byte)6,LocalTime.of(11,0),LocalTime.of(13,0),
-                TipoRestriccion.FIRME,SentidoRestriccion.DISPONIBLE)));
+        Datos datos = registrar(4, List.of(
+                new Peticiones.Restriccion((byte) 1, LocalTime.of(11, 0), LocalTime.of(15, 0),
+                        TipoRestriccion.FIRME, SentidoRestriccion.DISPONIBLE),
+                new Peticiones.Restriccion((byte) 2, LocalTime.of(13, 0), LocalTime.of(15, 0),
+                        TipoRestriccion.FIRME, SentidoRestriccion.DISPONIBLE),
+                new Peticiones.Restriccion((byte) 5, LocalTime.of(19, 0), LocalTime.of(22, 0),
+                        TipoRestriccion.FIRME, SentidoRestriccion.DISPONIBLE),
+                new Peticiones.Restriccion((byte) 6, LocalTime.of(11, 0), LocalTime.of(13, 0),
+                        TipoRestriccion.FIRME, SentidoRestriccion.DISPONIBLE)));
 
-        var generado=generacion.generar(datos.periodoId());
+        var generado = generacion.generar(datos.periodoId());
         persistirYRecargar();
 
-        assertEquals(3,generado.sesionesGeneradas());
-        assertEquals(1,generado.noUbicadas().getFirst().faltantes());
-        var guardadas=sesiones.findByHorarioIdOrderByDiaAscHoraInicioAsc(generado.horarioId());
-        assertEquals(List.of((byte)1,(byte)5,(byte)6),guardadas.stream().map(s->s.getDia()).toList());
-        assertEquals(List.of(LocalTime.of(11,0),LocalTime.of(19,0),LocalTime.of(11,0)),
-            guardadas.stream().map(s->s.getHoraInicio()).toList());
-        for(var s:guardadas) {
-            assertEquals(120,Duration.between(s.getHoraInicio(),s.getHoraFin()).toMinutes());
-            assertFalse(s.getHoraInicio().isBefore(LocalTime.of(14,0))
-                && s.getHoraFin().isAfter(LocalTime.of(13,0)));
+        assertEquals(3, generado.sesionesGeneradas());
+        assertEquals(1, generado.noUbicadas().getFirst().faltantes());
+        var guardadas = sesiones.findByHorarioIdOrderByDiaAscHoraInicioAsc(generado.horarioId());
+        assertEquals(List.of((byte) 1, (byte) 5, (byte) 6), guardadas.stream().map(s -> s.getDia()).toList());
+        assertEquals(List.of(LocalTime.of(11, 0), LocalTime.of(19, 0), LocalTime.of(11, 0)),
+                guardadas.stream().map(s -> s.getHoraInicio()).toList());
+        for (var s : guardadas) {
+            assertEquals(120, Duration.between(s.getHoraInicio(), s.getHoraFin()).toMinutes());
+            assertFalse(s.getHoraInicio().isBefore(LocalTime.of(14, 0))
+                    && s.getHoraFin().isAfter(LocalTime.of(13, 0)));
         }
     }
 
     @Test
     void generacionDespuesDelAlmuerzoConservaElBloqueDeQuinceADiecisiete() {
-        Datos datos=registrar(1,List.of(new Peticiones.Restriccion((byte)1,
-            LocalTime.of(14,0),LocalTime.of(17,0),TipoRestriccion.FIRME,SentidoRestriccion.DISPONIBLE)));
-        var generado=generacion.generar(datos.periodoId());
+        Datos datos = registrar(1, List.of(new Peticiones.Restriccion((byte) 1,
+                LocalTime.of(14, 0), LocalTime.of(17, 0), TipoRestriccion.FIRME, SentidoRestriccion.DISPONIBLE)));
+        var generado = generacion.generar(datos.periodoId());
         persistirYRecargar();
-        assertEquals(1,generado.sesionesGeneradas());
-        var s=sesiones.findByHorarioIdOrderByDiaAscHoraInicioAsc(generado.horarioId()).getFirst();
-        assertEquals(LocalTime.of(15,0),s.getHoraInicio());
-        assertEquals(LocalTime.of(17,0),s.getHoraFin());
+        assertEquals(1, generado.sesionesGeneradas());
+        var s = sesiones.findByHorarioIdOrderByDiaAscHoraInicioAsc(generado.horarioId()).getFirst();
+        assertEquals(LocalTime.of(15, 0), s.getHoraInicio());
+        assertEquals(LocalTime.of(17, 0), s.getHoraFin());
     }
 
     @Test
     void cambioDeAlmuerzoNoAlteraUnHorarioPublicadoNiSusParametros() {
-        Datos datos=registrar(1,List.of(new Peticiones.Restriccion((byte)1,
-            LocalTime.of(13,0),LocalTime.of(15,0),TipoRestriccion.FIRME,SentidoRestriccion.DISPONIBLE)));
-        var p=periodos.obtener(datos.periodoId());
-        periodos.actualizar(p.getId(),new Peticiones.Parametros(p.getHoraInicioSemana(),p.getHoraFinSemana(),
-            p.getHoraInicioSabado(),p.getHoraFinSabado(),LocalTime.of(12,0),LocalTime.of(13,0),
-            (int)p.getDuracionBloqueMin(),(int)p.getMaxSesionesSemana(),(int)p.getCupoMaximoBase(),
-            p.getToleranciaCupoPct(),(int)p.getCupoMinimo()));
-        var generado=generacion.generar(datos.periodoId());
+        Datos datos = registrar(1, List.of(new Peticiones.Restriccion((byte) 1,
+                LocalTime.of(13, 0), LocalTime.of(15, 0), TipoRestriccion.FIRME, SentidoRestriccion.DISPONIBLE)));
+        var p = periodos.obtener(datos.periodoId());
+        periodos.actualizar(p.getId(), new Peticiones.Parametros(p.getHoraInicioSemana(), p.getHoraFinSemana(),
+                p.getHoraInicioSabado(), p.getHoraFinSabado(), LocalTime.of(12, 0), LocalTime.of(13, 0),
+                (int) p.getDuracionBloqueMin(), (int) p.getMaxSesionesSemana(), (int) p.getCupoMaximoBase(),
+                p.getToleranciaCupoPct(), (int) p.getCupoMinimo()));
+        var generado = generacion.generar(datos.periodoId());
         horarios.publicar(generado.horarioId());
         persistirYRecargar();
-        var publicado=horarios.detalle(generado.horarioId());
-        assertEquals(LocalTime.of(13,0),publicado.sesiones().getFirst().horaInicio());
-        var historico=periodos.obtener(datos.periodoId());
-        var parametros=new Peticiones.Parametros(p.getHoraInicioSemana(),p.getHoraFinSemana(),
-            p.getHoraInicioSabado(),p.getHoraFinSabado(),LocalTime.of(13,0),LocalTime.of(14,0),
-            (int)p.getDuracionBloqueMin(),(int)p.getMaxSesionesSemana(),(int)p.getCupoMaximoBase(),
-            p.getToleranciaCupoPct(),(int)p.getCupoMinimo());
+        var publicado = horarios.detalle(generado.horarioId());
+        assertEquals(LocalTime.of(13, 0), publicado.sesiones().getFirst().horaInicio());
+        var historico = periodos.obtener(datos.periodoId());
+        var parametros = new Peticiones.Parametros(p.getHoraInicioSemana(), p.getHoraFinSemana(),
+                p.getHoraInicioSabado(), p.getHoraFinSabado(), LocalTime.of(13, 0), LocalTime.of(14, 0),
+                (int) p.getDuracionBloqueMin(), (int) p.getMaxSesionesSemana(), (int) p.getCupoMaximoBase(),
+                p.getToleranciaCupoPct(), (int) p.getCupoMinimo());
 
-        assertThrows(ApiException.class,()->periodos.actualizar(historico.getId(),parametros));
+        assertThrows(ApiException.class, () -> periodos.actualizar(historico.getId(), parametros));
 
-        assertEquals(LocalTime.of(12,0),historico.getAlmuerzoInicio());
-        assertEquals(LocalTime.of(13,0),historico.getAlmuerzoFin());
-        assertEquals(publicado,horarios.detalle(publicado.id()));
+        assertEquals(LocalTime.of(12, 0), historico.getAlmuerzoInicio());
+        assertEquals(LocalTime.of(13, 0), historico.getAlmuerzoFin());
+        assertEquals(publicado, horarios.detalle(publicado.id()));
     }
 
     @Test
@@ -138,7 +149,7 @@ class FlujoHorarioTests {
 
         var sesion = borrador.sesiones().getFirst();
         var movimiento = horarios.mover(borrador.id(), sesion.id(),
-            new Peticiones.Movimiento((byte) 6, LocalTime.of(9, 0)));
+                new Peticiones.Movimiento((byte) 6, LocalTime.of(9, 0)));
         assertTrue(movimiento.aplicado());
         assertEquals(LocalTime.of(11, 0), movimiento.sesion().horaFin());
         persistirYRecargar();
@@ -173,11 +184,11 @@ class FlujoHorarioTests {
         var anterior = horarios.detalle(generado.horarioId()).sesiones().getFirst();
 
         var movimiento = horarios.mover(generado.horarioId(), anterior.id(),
-            new Peticiones.Movimiento((byte) 1, LocalTime.of(7, 0)));
+                new Peticiones.Movimiento((byte) 1, LocalTime.of(7, 0)));
 
         assertFalse(movimiento.aplicado());
         assertTrue(movimiento.validacion().incidencias().stream()
-            .anyMatch(i -> i.codigo().equals("DOCENTE_NO_DISPONIBLE")));
+                .anyMatch(i -> i.codigo().equals("DOCENTE_NO_DISPONIBLE")));
         persistirYRecargar();
         var posterior = sesiones.findById(anterior.id()).orElseThrow();
         assertEquals(anterior.dia(), posterior.getDia());
@@ -195,7 +206,7 @@ class FlujoHorarioTests {
         var sesion = publicado.sesiones().getFirst();
 
         ApiException error = assertThrows(ApiException.class, () -> horarios.mover(publicado.id(), sesion.id(),
-            new Peticiones.Movimiento((byte) 6, LocalTime.of(9, 0))));
+                new Peticiones.Movimiento((byte) 6, LocalTime.of(9, 0))));
 
         assertEquals(HttpStatus.CONFLICT, error.getStatus());
         assertTrue(error.getMessage().contains("publicado"));
@@ -207,7 +218,7 @@ class FlujoHorarioTests {
     @Test
     void laGeneracionParcialInformaFaltantesYNoPermitePublicar() {
         var disponibilidad = new Peticiones.Restriccion((byte) 6, LocalTime.of(9, 0), LocalTime.of(11, 0),
-            TipoRestriccion.FIRME, SentidoRestriccion.DISPONIBLE);
+                TipoRestriccion.FIRME, SentidoRestriccion.DISPONIBLE);
         Datos datos = registrar(2, List.of(disponibilidad));
 
         var generado = generacion.generar(datos.periodoId());
@@ -227,14 +238,15 @@ class FlujoHorarioTests {
     void laPublicacionRevalidaLosChoquesDocentesEntreGrupos() {
         Datos datos = registrar(1);
         registro.crearGrupo(new Peticiones.Grupo(datos.periodoId(), datos.cursoId(), datos.docenteId(),
-            "B", null, null, 20));
+                "B", null, null, 20));
         var generado = generacion.generar(datos.periodoId());
         persistirYRecargar();
         assertEquals(2, generado.sesionesGeneradas());
         var actuales = sesiones.findByHorarioIdOrderByDiaAscHoraInicioAsc(generado.horarioId());
         var primera = actuales.getFirst();
         var segunda = actuales.getLast();
-        // Simula un borrador importado: el índice permite la misma casilla en grupos distintos.
+        // Simula un borrador importado: el índice permite la misma casilla en grupos
+        // distintos.
         segunda.setDia(primera.getDia());
         segunda.setHoraInicio(primera.getHoraInicio());
         segunda.setHoraFin(primera.getHoraFin());
@@ -249,19 +261,22 @@ class FlujoHorarioTests {
 
     private Datos registrar(int frecuencia) {
         return registrar(frecuencia, List.of(new Peticiones.Restriccion((byte) 1,
-            LocalTime.of(7, 0), LocalTime.of(9, 0),
-            TipoRestriccion.FIRME, SentidoRestriccion.NO_DISPONIBLE)));
+                LocalTime.of(7, 0), LocalTime.of(9, 0),
+                TipoRestriccion.FIRME, SentidoRestriccion.NO_DISPONIBLE)));
     }
 
     private Datos registrar(int frecuencia, List<Peticiones.Restriccion> restricciones) {
         var periodo = periodos.crear(new Peticiones.Periodo("Prueba flujo V2",
-            LocalDate.of(2030, 1, 15), LocalDate.of(2030, 6, 15)));
+                LocalDate.of(2030, 1, 15), LocalDate.of(2030, 6, 15)));
         var docente = registro.crearDocente(new Peticiones.Docente("Docente \"Prueba\", UEB",
-            TipoVinculacion.TC, Set.of("Sistemas"), false, restricciones));
+                TipoVinculacion.TC, Set.of("Sistemas"), false, restricciones));
         var curso = registro.crearCurso(new Peticiones.Curso("FLUJO-V2", "Programación, \"V2\"",
-            frecuencia, 120, true));
+                frecuencia, 120, true));
+        habilitaciones.actualizarCursos(
+                docente.getId(),
+                Set.of(curso.getId()));
         Respuestas.GrupoDto grupo = registro.crearGrupo(new Peticiones.Grupo(
-            periodo.getId(), curso.getId(), docente.getId(), "A", null, null, 20));
+                periodo.getId(), curso.getId(), docente.getId(), "A", null, null, 20));
         Datos datos = new Datos(periodo.getId(), docente.getId(), curso.getId(), grupo.id());
         persistirYRecargar();
         return datos;
@@ -272,5 +287,6 @@ class FlujoHorarioTests {
         entityManager.clear();
     }
 
-    private record Datos(Long periodoId, Long docenteId, Long cursoId, Long grupoId) {}
+    private record Datos(Long periodoId, Long docenteId, Long cursoId, Long grupoId) {
+    }
 }
