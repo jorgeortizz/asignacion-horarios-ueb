@@ -78,6 +78,7 @@ public class SeguridadConfig {
                 .requestMatchers(HttpMethod.GET, "/api/v1/publico/**").permitAll()
                 // DOCENTE solo consulta su propia identidad académica desde la sesión.
                 .requestMatchers(HttpMethod.GET, "/api/v1/docentes/me/horario-publicado").hasRole("DOCENTE")
+                .requestMatchers(HttpMethod.GET, "/api/v1/docentes/me/periodos-publicados").hasRole("DOCENTE")
                 // Únicamente el Comité puede crear cuentas y publicar horarios.
                 .requestMatchers(HttpMethod.POST, "/api/v1/usuarios").hasRole("COMITE_TACTICO")
                 .requestMatchers(HttpMethod.POST, "/api/v1/horarios/*/publicar").hasRole("COMITE_TACTICO")
