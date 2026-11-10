@@ -83,6 +83,7 @@ public class SeguridadConfig {
                 .requestMatchers(HttpMethod.POST, "/api/v1/usuarios").hasRole("COMITE_TACTICO")
                 .requestMatchers(HttpMethod.POST, "/api/v1/horarios/*/publicar").hasRole("COMITE_TACTICO")
                 // API administrativa existente: todo borrador, historial y CSV interno queda restringido.
+                .requestMatchers("/api/v1/admin/usuarios", "/api/v1/admin/usuarios/**").hasRole("COMITE_TACTICO")
                 .requestMatchers("/api/v1/**").hasAnyRole("COMITE_TACTICO", "COORDINACION_ACADEMICA")
                 .anyRequest().denyAll());
         return http.build();
