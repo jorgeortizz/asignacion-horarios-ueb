@@ -16,10 +16,11 @@ public class GeneracionService {
     private final RestriccionHorariaRepository restricciones;
     private final ValidacionService validacion;
     private final BloquesFijos bloques;
+    private final AulasService aulas;
     public GeneracionService(PeriodoAcademicoRepository periodos,GrupoRepository grupos,HorarioRepository horarios,
-      SesionRepository sesiones,RestriccionHorariaRepository restricciones,ValidacionService validacion,BloquesFijos bloques) {
+      SesionRepository sesiones,RestriccionHorariaRepository restricciones,ValidacionService validacion,BloquesFijos bloques,AulasService aulas) {
         this.periodos=periodos;this.grupos=grupos;this.horarios=horarios;this.sesiones=sesiones;
-        this.restricciones=restricciones;this.validacion=validacion;this.bloques=bloques;
+        this.restricciones=restricciones;this.validacion=validacion;this.bloques=bloques;this.aulas=aulas;
     }
     private record Candidato(byte dia,LocalTime inicio,ResultadoValidacion resultado,int repeticionesDia) {}
     @Transactional public Respuestas.Generacion generar(Long periodoId) {
@@ -75,7 +76,8 @@ public class GeneracionService {
                 faltantes.add(new Respuestas.NoUbicada(grupo.getId(),grupo.getCurso().getNombre(),objetivo-generadas,motivo));
             }
         }
-        sesiones.saveAll(colocadas);
+        sesiones.saveAllAndFlush(colocadas);
+        aulas.automaticoEnTransaccion(horario.getId());
         return new Respuestas.Generacion(horario.getId(),colocadas.size(),List.copyOf(faltantes),List.copyOf(avisos));
     }
 }

@@ -15,10 +15,11 @@ public class HorarioService {
     private final GrupoRepository grupos;
     private final RestriccionHorariaRepository restricciones;
     private final ValidacionService validacion;
+    private final AulasService aulas;
     public HorarioService(HorarioRepository horarios,SesionRepository sesiones,GrupoRepository grupos,
-                          RestriccionHorariaRepository restricciones,ValidacionService validacion) {
+                          RestriccionHorariaRepository restricciones,ValidacionService validacion,AulasService aulas) {
         this.horarios=horarios;this.sesiones=sesiones;this.grupos=grupos;
-        this.restricciones=restricciones;this.validacion=validacion;
+        this.restricciones=restricciones;this.validacion=validacion;this.aulas=aulas;
     }
     @Transactional public Respuestas.MovimientoResultado mover(Long horarioId,Long sesionId,Peticiones.Movimiento p) {
         // Bloqueo de la fila horario: serializa movimientos concurrentes dentro del mismo borrador.
@@ -33,6 +34,7 @@ public class HorarioService {
         s.setHoraFin(p.horaInicio().plusMinutes(s.getGrupo().getCurso().getDuracionSesionMin()));
         // Guardado en la misma transacción que el bloqueo del horario.
         sesiones.saveAndFlush(s);
+        aulas.despuesDeMover(horarioId,sesionId);
         return new Respuestas.MovimientoResultado(true,r,Respuestas.SesionDto.de(s));
     }
     @Transactional public Respuestas.HorarioDto publicar(Long id) {
@@ -55,6 +57,7 @@ public class HorarioService {
              .forEach(i->errores.add("Sesión "+s.getId()+": "+i.motivo()));
         }
         if(!errores.isEmpty()) throw new ApiException(HttpStatus.CONFLICT, "No se puede publicar: "+String.join("; ",errores));
+        aulas.antesDePublicar(id);
         h.setEstado(EstadoHorario.PUBLICADO);h.setFechaPublicacion(LocalDateTime.now());horarios.saveAndFlush(h);
         return new Respuestas.HorarioDto(h.getId(),h.getPeriodo().getId(),h.getEstado(),h.getFechaCreacion(),
                  h.getFechaPublicacion(),actuales.stream().map(Respuestas.SesionDto::de).toList());
